@@ -187,6 +187,30 @@ function messageSourceKind(message) {
 }
 
 /**
+ * Compact metadata from one compaction summary event. The client uses `seq` as
+ * a one-shot latch and `shadowedTokens` only for the accompanying copy, never
+ * for Free geometry.
+ * @param {Record<string, unknown> | undefined} event
+ */
+function compactionFromEvent(event) {
+  if (event === undefined || event === null) return undefined;
+  const data = isObject(event.data) ? event.data : {};
+  const seq = Number(event.seq);
+  if (!Number.isFinite(seq)) return undefined;
+  return {
+    seq,
+    shadowedTokens: Number.isFinite(data.shadowedTokenCount)
+      ? Math.max(0, Number(data.shadowedTokenCount))
+      : undefined,
+    summaryTokens:
+      typeof data.summary === "string" ? Math.ceil(data.summary.length / CHARS_PER_TOKEN) : undefined,
+    turn: Number.isFinite(data.turn) ? Number(data.turn) : undefined,
+    model: typeof data.model === "string" ? data.model : undefined,
+    provider: typeof data.provider === "string" ? data.provider : undefined,
+  };
+}
+
+/**
  * Extract the loaded skill's name from a `skill` tool result. The result body
  * starts with a `<skill_content name="…">` envelope, so the tool name alone
  * would hide which skill was actually loaded.
@@ -234,10 +258,12 @@ async function readSource(ctx, sessionId) {
     }
     const headerEvent = findLast(live.log, (event) => event.type === "request/header");
     const contextEvent = findLast(live.log, (event) => event.type === "request/context");
+    const compactionEvent = findLast(live.log, (event) => event.type === "compaction/summary");
     return {
       surface,
       header: headerEvent?.data?.header,
       contextWindow: contextEvent?.data?.contextWindow,
+      compaction: compactionFromEvent(compactionEvent),
     };
   }
 
@@ -253,10 +279,12 @@ async function readSource(ctx, sessionId) {
   }
   let header;
   let contextWindow;
+  let compaction;
   if (typeof query.listEvents === "function") {
     const records = await query.listEvents(sessionId);
     const headerSeq = findLast(records, (record) => record.type === "request/header")?.seq;
     const contextSeq = findLast(records, (record) => record.type === "request/context")?.seq;
+    const compactionSeq = findLast(records, (record) => record.type === "compaction/summary")?.seq;
     if (headerSeq !== undefined && typeof query.readEvent === "function") {
       const record = await query.readEvent({ sessionId, seq: headerSeq, before: 0, after: 0 });
       header = record?.target?.data?.header;
@@ -265,8 +293,12 @@ async function readSource(ctx, sessionId) {
       const record = await query.readEvent({ sessionId, seq: contextSeq, before: 0, after: 0 });
       contextWindow = record?.target?.data?.contextWindow;
     }
+    if (compactionSeq !== undefined && typeof query.readEvent === "function") {
+      const record = await query.readEvent({ sessionId, seq: compactionSeq, before: 0, after: 0 });
+      compaction = compactionFromEvent(record?.target);
+    }
   }
-  return { surface, header, contextWindow };
+  return { surface, header, contextWindow, compaction };
 }
 
 /**
@@ -535,6 +567,7 @@ export function buildBreakdown(source) {
     totalTokens,
     messageTokens,
     toolTokens,
+    compaction: source.compaction,
     categories: populated.map((category) => ({
       ...category,
       share: totalTokens === 0 ? 0 : category.tokens / totalTokens,

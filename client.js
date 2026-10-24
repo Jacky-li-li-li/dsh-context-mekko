@@ -167,6 +167,7 @@ window.__ModuleLoader__.load({
 .cmk-chart{position:relative;isolation:isolate;display:block;height:600px;width:100%;padding:5px;border-radius:18px;overflow:hidden;background:linear-gradient(145deg,color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 36%,transparent),color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 12%,transparent)),rgba(128,128,128,.045);border:1px solid rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(0,0,0,.08),0 12px 30px rgba(0,0,0,.12);backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%)}
 .cmk-chart::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.12),transparent 28%,transparent 68%,rgba(255,255,255,.045))}
 .cmk-chartNested{height:520px;margin:0 0 14px}
+.cmk-motion{position:absolute;inset:0;z-index:4;width:100%;height:100%;pointer-events:none}
 .cmk-info{flex:none;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid rgba(255,255,255,.22);border-radius:50%;background:color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 42%,transparent);backdrop-filter:blur(12px) saturate(150%);-webkit-backdrop-filter:blur(12px) saturate(150%);color:var(--dsw-alias-label-secondary,#555);font-family:inherit;font-size:11px;font-weight:600;line-height:1;cursor:help;box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
 .cmk-info:hover,.cmk-info:focus-visible{color:var(--dsw-alias-label-primary,#111);border-color:rgba(255,255,255,.36);outline:none}
 .cmk-tile{--cmk-tile-color:#8a8f98;container-type:size;position:absolute;z-index:1;padding:0;margin:0;border:1px solid color-mix(in srgb,var(--cmk-tile-color) 30%,rgba(255,255,255,.26));border-radius:12px;cursor:pointer;overflow:hidden;isolation:isolate;background:linear-gradient(135deg,color-mix(in srgb,var(--cmk-tile-color) 68%,rgba(255,255,255,.18)) 0%,color-mix(in srgb,var(--cmk-tile-color) 46%,transparent) 52%,color-mix(in srgb,var(--cmk-tile-color) 58%,transparent) 100%);backdrop-filter:blur(14px) saturate(170%);-webkit-backdrop-filter:blur(14px) saturate(170%);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(0,0,0,.10),0 3px 10px rgba(0,0,0,.10);transition:left .5s cubic-bezier(.22,1,.36,1),top .5s cubic-bezier(.22,1,.36,1),width .5s cubic-bezier(.22,1,.36,1),height .5s cubic-bezier(.22,1,.36,1),transform .18s ease,filter .18s ease,box-shadow .18s ease}
@@ -552,6 +553,216 @@ window.__ModuleLoader__.load({
       };
     }
 
+    function motionRect(rect) {
+      return {
+        x: rect.x + CHART_PAD + TILE_GAP / 2,
+        y: rect.y + CHART_PAD + TILE_GAP / 2,
+        width: Math.max(rect.width - TILE_GAP, 1),
+        height: Math.max(rect.height - TILE_GAP, 1),
+      };
+    }
+
+    function classifyMotion(previous, next) {
+      if (!previous || previous.sessionId !== next.sessionId) return null;
+      if (next.compactionSeq !== null && next.compactionSeq !== previous.compactionSeq) return 'compaction';
+      if (previous.window !== next.window) return 'window';
+      const delta = next.used - previous.used;
+      const threshold = Math.max(1024, next.window * 0.002);
+      if (Math.abs(delta) < threshold) return null;
+      return delta > 0 ? 'consume' : 'release';
+    }
+
+    function buildMotionPlan(previous, next, kind) {
+      const previousTokens = new Map(previous.categories.map((category) => [category.key, category.tokens]));
+      const changes = next.categories.map((category) => ({
+        key: category.key,
+        delta: category.tokens - (previousTokens.get(category.key) ?? 0),
+      }));
+      const positive = changes.filter((change) => change.delta > 0);
+      const negative = changes.filter((change) => change.delta < 0);
+      const targets = positive
+        .map((change) => ({
+          key: change.key,
+          color: CATEGORY_COLORS[change.key] ?? '#8a8f98',
+          rect: next.rects.get(change.key),
+          delta: change.delta,
+        }))
+        .filter((target) => target.rect !== undefined);
+      const origins = negative
+        .map((change) => ({
+          key: change.key,
+          color: CATEGORY_COLORS[change.key] ?? '#8a8f98',
+          rect: previous.rects.get(change.key),
+          delta: change.delta,
+        }))
+        .filter((origin) => origin.rect !== undefined);
+
+      if (kind === 'consume' && targets.length === 0) return null;
+      if (kind !== 'consume' && origins.length === 0) return null;
+      return {
+        kind,
+        duration: kind === 'compaction' ? 1400 : kind === 'release' ? 700 : 900,
+        targets,
+        origins,
+        previousFree: previous.freeRect,
+        free: next.freeRect,
+        usedFrom: previous.used,
+        usedTo: next.used,
+      };
+    }
+
+    const GLOW_CACHE = new Map();
+
+    function glowSprite(color) {
+      const cached = GLOW_CACHE.get(color);
+      if (cached !== undefined) return cached;
+      const sprite = document.createElement('canvas');
+      sprite.width = 64;
+      sprite.height = 64;
+      const context = sprite.getContext('2d');
+      if (context === null) return null;
+      const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+      gradient.addColorStop(0, color);
+      gradient.addColorStop(0.22, color);
+      gradient.addColorStop(1, 'rgba(255,255,255,0)');
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, 64, 64);
+      GLOW_CACHE.set(color, sprite);
+      return sprite;
+    }
+
+    function MotionLayer({ plan, onDone }) {
+      const canvasRef = useRef(null);
+      const doneRef = useRef(onDone);
+      doneRef.current = onDone;
+
+      useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas || typeof window === 'undefined') return undefined;
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+          doneRef.current();
+          return undefined;
+        }
+        const context = canvas.getContext('2d');
+        if (context === null) return undefined;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const resize = () => {
+          const rect = canvas.getBoundingClientRect();
+          if (rect.width <= 0 || rect.height <= 0) return;
+          canvas.width = Math.max(1, Math.round(rect.width * dpr));
+          canvas.height = Math.max(1, Math.round(rect.height * dpr));
+          context.setTransform(dpr, 0, 0, dpr, 0, 0);
+        };
+        resize();
+        const observer =
+          typeof ResizeObserver === 'undefined'
+            ? undefined
+            : new ResizeObserver(() => {
+                resize();
+              });
+        observer?.observe(canvas);
+        const start = performance.now();
+        let frame = 0;
+        let finished = false;
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          cancelAnimationFrame(frame);
+          doneRef.current();
+        };
+        const drawGlow = (color, x, y, radius, alpha) => {
+          const sprite = glowSprite(color);
+          if (sprite === null) return;
+          context.globalAlpha = alpha;
+          context.drawImage(sprite, x - radius, y - radius, radius * 2, radius * 2);
+        };
+        const drawGhost = (color, rect, alpha) => {
+          if (rect === undefined) return;
+          const radius = Math.min(12, rect.width / 3, rect.height / 3);
+          context.globalAlpha = alpha;
+          context.fillStyle = color;
+          context.beginPath();
+          if (typeof context.roundRect === 'function') {
+            context.roundRect(rect.x, rect.y, rect.width, rect.height, radius);
+          } else {
+            context.rect(rect.x, rect.y, rect.width, rect.height);
+          }
+          context.fill();
+        };
+        const draw = (now) => {
+          const elapsed = now - start;
+          const width = canvas.width / dpr;
+          const height = canvas.height / dpr;
+          context.clearRect(0, 0, width, height);
+          if (plan.kind === 'consume') {
+            const source = plan.previousFree ?? plan.free;
+            const sourceY = source.y + source.height * 0.72;
+            plan.targets.forEach((target, index) => {
+              const delay = index * 55;
+              const progress = Math.max(0, Math.min(1, (elapsed - delay) / 650));
+              if (progress <= 0) return;
+              const eased = 1 - Math.pow(1 - progress, 3);
+              const startX = source.x + source.width * ((index + 1) / (plan.targets.length + 1));
+              const endX = target.rect.x + target.rect.width / 2;
+              const endY = target.rect.y + target.rect.height / 2;
+              const controlX = (startX + endX) / 2;
+              const controlY = Math.min(sourceY, endY) - 42;
+              const inverse = 1 - eased;
+              const x = inverse * inverse * startX + 2 * inverse * eased * controlX + eased * eased * endX;
+              const y = inverse * inverse * sourceY + 2 * inverse * eased * controlY + eased * eased * endY;
+              drawGlow(target.color, x, y, 9, 0.55);
+              context.globalAlpha = 0.9;
+              context.fillStyle = target.color;
+              context.beginPath();
+              context.arc(x, y, 2.2, 0, Math.PI * 2);
+              context.fill();
+              if (progress > 0.62) {
+                context.globalAlpha = (1 - progress) * 0.65;
+                context.strokeStyle = target.color;
+                context.lineWidth = 1.5;
+                context.beginPath();
+                context.arc(endX, endY, 8 + (1 - progress) * 18, 0, Math.PI * 2);
+                context.stroke();
+              }
+            });
+          } else {
+            const freeY = plan.free.y + plan.free.height * 0.42;
+            plan.origins.slice(0, 8).forEach((origin, index) => {
+              const delay = index * 35;
+              const progress = Math.max(0, Math.min(1, (elapsed - delay) / 1000));
+              if (progress <= 0) return;
+              const eased = 1 - Math.pow(1 - progress, 3);
+              const startX = origin.rect.x + origin.rect.width / 2;
+              const startY = origin.rect.y + origin.rect.height * 0.55;
+              const x = startX + Math.sin(index * 1.7 + progress * 2.4) * 32 * progress;
+              const y = startY + (freeY - startY) * eased;
+              drawGhost(origin.color, origin.rect, 0.16 * (1 - progress));
+              drawGlow(origin.color, x, y, 18 + progress * 48, 0.28 * (1 - progress));
+              drawGlow(origin.color, x + 24 * Math.sin(index), y + 10, 14 + progress * 32, 0.16 * (1 - progress));
+            });
+          }
+          if (elapsed >= plan.duration) {
+            finish();
+            return;
+          }
+          frame = requestAnimationFrame(draw);
+        };
+        frame = requestAnimationFrame(draw);
+        const onVisibility = () => {
+          if (document.visibilityState === 'hidden') finish();
+        };
+        document.addEventListener('visibilitychange', onVisibility);
+        return () => {
+          finished = true;
+          cancelAnimationFrame(frame);
+          observer?.disconnect();
+          document.removeEventListener('visibilitychange', onVisibility);
+        };
+      }, [plan]);
+
+      return h('canvas', { ref: canvasRef, className: 'cmk-motion', 'aria-hidden': true });
+    }
+
     function MekkoTile({ rect, item, onSelectCategory, share, t }) {
       const category = item.category;
       const color = CATEGORY_COLORS[category.key] ?? '#8a8f98';
@@ -701,11 +912,31 @@ window.__ModuleLoader__.load({
       );
     }
 
-    function Mekko({ categories, layoutScale = 1, freeTokens = 0, windowTokens = 0, onSelectCategory, t }) {
+    function Mekko({
+      sessionId,
+      asOfSeq,
+      categories,
+      rawCategories = [],
+      usedTokens = 0,
+      layoutScale = 1,
+      freeTokens = 0,
+      windowTokens = 0,
+      compaction,
+      onSelectCategory,
+      t,
+    }) {
       const chartRef = useRef(null);
       const size = useElementSize(chartRef);
+      const [motionPlan, setMotionPlan] = useState(null);
+      const activePlanRef = useRef(null);
+      const motionRef = useRef(null);
+      const motionId = useRef(0);
+      const clearMotion = useCallback(() => {
+        activePlanRef.current = null;
+        setMotionPlan(null);
+      }, []);
+      const onMotionDone = clearMotion;
       const estimatedTotal = categories.reduce((sum, category) => sum + category.tokens, 0);
-      if (estimatedTotal <= 0) return h('div', { className: 'cmk-empty' }, '—');
       const items = categories.map((category) => ({
         key: category.key,
         tokens: category.tokens * layoutScale,
@@ -717,6 +948,77 @@ window.__ModuleLoader__.load({
       const usedHeight = size.height * usedShare;
       const freeHeight = Math.max(size.height - usedHeight, 0);
       const rects = layoutTreemap(items, size.width, usedHeight);
+      const motionKey = [
+        sessionId,
+        asOfSeq,
+        usedTokens,
+        windowTokens,
+        compaction?.seq ?? '',
+        rawCategories.map((category) => `${category.key}:${category.tokens}`).join(','),
+        size.width,
+        size.height,
+      ].join('|');
+
+      useEffect(() => {
+        if (size.width <= 0 || size.height <= 0) return;
+        const rectsByKey = new Map(
+          rects.map(({ item, ...rect }) => [
+            item.key,
+            motionRect({ ...rect, y: rect.y + freeHeight }),
+          ]),
+        );
+        const freeRect = motionRect({ x: 0, y: 0, width: size.width, height: freeHeight });
+        const current = {
+          sessionId,
+          used: usedTokens,
+          window: windowTokens,
+          categories: rawCategories.map(({ key, tokens }) => ({ key, tokens })),
+          compactionSeq: compaction?.seq ?? null,
+          rects: rectsByKey,
+          freeRect,
+          size: { width: size.width, height: size.height },
+        };
+        const previous = motionRef.current;
+        if (previous === null) {
+          motionRef.current = current;
+          return;
+        }
+        if (previous.sessionId !== sessionId) {
+          clearMotion();
+          motionRef.current = current;
+          return;
+        }
+        if (previous.size.width !== size.width || previous.size.height !== size.height) {
+          clearMotion();
+          motionRef.current = current;
+          return;
+        }
+        const usedChanged = previous.used !== current.used;
+        const windowChanged = previous.window !== current.window;
+        const compactionChanged =
+          current.compactionSeq !== null && current.compactionSeq !== previous.compactionSeq;
+        if (!usedChanged && !windowChanged && !compactionChanged) return;
+        motionRef.current = current;
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+          clearMotion();
+          return;
+        }
+        const kind = classifyMotion(previous, current);
+        if (kind === null || kind === 'window') {
+          clearMotion();
+          return;
+        }
+        const plan = buildMotionPlan(previous, current, kind);
+        if (plan === null) {
+          clearMotion();
+          return;
+        }
+        plan.id = ++motionId.current;
+        activePlanRef.current = plan;
+        setMotionPlan(plan);
+      }, [motionKey]);
+
+      if (estimatedTotal <= 0) return h('div', { className: 'cmk-empty' }, '—');
       return h(
         'div',
         { ref: chartRef, className: 'cmk-chart' },
@@ -739,6 +1041,7 @@ window.__ModuleLoader__.load({
             t,
           }),
         ),
+        motionPlan === null ? null : h(MotionLayer, { plan: motionPlan, onDone: onMotionDone }),
       );
     }
 
@@ -772,7 +1075,7 @@ window.__ModuleLoader__.load({
       );
     }
 
-    function Overview({ data, usedTokens, contextWindow, onSelectCategory, onOpenBlock, t }) {
+    function Overview({ sessionId, data, usedTokens, contextWindow, onSelectCategory, onOpenBlock, t }) {
       const categories = [...data.categories].sort(
         (left, right) => CATEGORY_ORDER.indexOf(left.key) - CATEGORY_ORDER.indexOf(right.key),
       );
@@ -804,7 +1107,18 @@ window.__ModuleLoader__.load({
           h('span', null, '·'),
           h('span', null, formatPercent(windowTokens > 0 ? used / windowTokens : 0)),
         ),
-        h(Mekko, { categories: displayCategories, freeTokens, windowTokens, onSelectCategory, t }),
+        h(Mekko, {
+          sessionId,
+          asOfSeq: data.asOfSeq,
+          categories: displayCategories,
+          rawCategories: categories,
+          usedTokens: used,
+          freeTokens,
+          windowTokens,
+          compaction: data.compaction,
+          onSelectCategory,
+          t,
+        }),
         h(Legend, { categories: displayCategories, total: windowTokens, onSelectCategory, t }),
         (() => {
           const top = displayCategories
@@ -1241,6 +1555,7 @@ window.__ModuleLoader__.load({
         });
       } else {
         content = h(Overview, {
+          sessionId,
           data,
           usedTokens: used,
           contextWindow: windowSize,
