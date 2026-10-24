@@ -471,7 +471,9 @@ export function buildBreakdown(source) {
       group:
         classification.category === "toolResults"
           ? (toolNames.get(String(message.toolCallId ?? "")) ?? "tool")
-          : classification.kind,
+          : classification.category === "injected"
+            ? (messageSourceKind(message) ?? classification.kind)
+            : classification.kind,
       seq,
     });
     category.tokens += tokens;

@@ -34,7 +34,16 @@
     "assistant": "Assistant",
     "tool": "Tool",
     "system": "System",
-    "context": "Context"
+    "context": "Context",
+    "developer": "Developer message",
+    "instructions": "Workspace instructions",
+    "injected": "Injected",
+    "other": "Other",
+    "team": "Team",
+    "goal": "Goal",
+    "plan": "Plan",
+    "compaction": "Compaction summary",
+    "tool-jobs": "Tool jobs"
   },
   "detail": {
     "title": "Context contribution",
@@ -43,5 +52,6 @@
     "truncated": "Content was truncated for display.",
     "noContent": "This contribution has no rendered content."
   },
-  "topContributors": "Largest contributions"
+  "topContributors": "Largest contributions",
+  "showMore": "Show more"
 }

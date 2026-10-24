@@ -33,6 +33,7 @@ window.__ModuleLoader__.load({
       free: 'Free',
       topContributors: '占用排行',
       items: '{count} 项',
+      showMore: '显示更多',
       loadContentFailed: '内容加载失败。',
       category: {
         system: '系统与指令',
@@ -49,6 +50,15 @@ window.__ModuleLoader__.load({
         tool: '工具',
         system: '系统',
         context: '上下文',
+        developer: '开发者消息',
+        instructions: '工作区指令',
+        injected: '注入消息',
+        other: '其他',
+        team: '团队',
+        goal: '目标',
+        plan: '计划',
+        compaction: '压缩摘要',
+        'tool-jobs': '工具任务',
       },
       detail: {
         source: '来源',
@@ -81,6 +91,7 @@ window.__ModuleLoader__.load({
       free: 'Free',
       topContributors: 'Largest contributions',
       items: '{count} items',
+      showMore: 'Show more',
       loadContentFailed: 'Could not load this contribution.',
       category: {
         system: 'System & instructions',
@@ -97,6 +108,15 @@ window.__ModuleLoader__.load({
         tool: 'Tool',
         system: 'System',
         context: 'Context',
+        developer: 'Developer message',
+        instructions: 'Workspace instructions',
+        injected: 'Injected',
+        other: 'Other',
+        team: 'Team',
+        goal: 'Goal',
+        plan: 'Plan',
+        compaction: 'Compaction summary',
+        'tool-jobs': 'Tool jobs',
       },
       detail: {
         source: 'Source',
@@ -151,6 +171,7 @@ window.__ModuleLoader__.load({
 .cmk-tile:hover{filter:brightness(1.10) saturate(1.12);transform:translateY(-1px);outline:1px solid rgba(255,255,255,.38);outline-offset:-1px;z-index:2;box-shadow:inset 0 1px 0 rgba(255,255,255,.40),inset 0 -1px 0 rgba(0,0,0,.10),0 6px 16px color-mix(in srgb,var(--cmk-tile-color) 24%,rgba(0,0,0,.16))}
 .cmk-tile:active{transform:translateY(0) scale(.995)}
 .cmk-tile:focus-visible{outline:2px solid var(--dsw-focus-ring-color,#4c8bf5);outline-offset:-2px;z-index:3}
+.cmk-tileOther{opacity:.72;cursor:default;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.14) 0 5px,transparent 5px 11px),linear-gradient(135deg,color-mix(in srgb,var(--cmk-tile-color) 36%,rgba(255,255,255,.12)) 0%,color-mix(in srgb,var(--cmk-tile-color) 24%,transparent) 100%)}
 .cmk-tileLabel{position:absolute;inset:6px 7px;z-index:2;display:none;flex-direction:column;align-items:flex-start;gap:2px;pointer-events:none;text-align:left;color:var(--dsw-alias-label-primary,#111);font:inherit}
 .cmk-tileLabelTitle{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;line-height:16px;font-weight:600}
 .cmk-tileLabelMeta{display:none;font-size:11px;line-height:15px;opacity:.78;font-variant-numeric:tabular-nums}
@@ -406,6 +427,8 @@ window.__ModuleLoader__.load({
 
     const CHART_PAD = 5;
     const TILE_GAP = 3;
+    const MAX_TILES = 200;
+    const MAX_LIST_ROWS = 200;
 
     function worstAspect(areas, length) {
       if (areas.length === 0 || length <= 0) return Infinity;
@@ -570,38 +593,94 @@ window.__ModuleLoader__.load({
       );
     }
 
-    function ContributionTreemap({ category, children, total, onOpenBlock, t }) {
+    function buildGroups(category) {
+      const groups = new Map();
+      for (const child of category.children) {
+        const key = typeof child.group === 'string' && child.group.length > 0 ? child.group : 'other';
+        let group = groups.get(key);
+        if (group === undefined) {
+          group = { key, tokens: 0, children: [] };
+          groups.set(key, group);
+        }
+        group.tokens += child.tokens;
+        group.children.push(child);
+      }
+      return [...groups.values()]
+        .map((group) => ({
+          ...group,
+          children: [...group.children].sort((left, right) => right.tokens - left.tokens),
+        }))
+        .sort((left, right) => right.tokens - left.tokens);
+    }
+
+    function groupLabel(t, key) {
+      const known = new Set([
+        'user',
+        'assistant',
+        'system',
+        'developer',
+        'instructions',
+        'injected',
+        'other',
+        'team',
+        'goal',
+        'plan',
+        'compaction',
+        'tool-jobs',
+      ]);
+      return known.has(key) ? translate(t, `groups.${key}`) : key;
+    }
+
+    function limitTreemapItems(items) {
+      const sorted = [...items].sort((left, right) => right.tokens - left.tokens);
+      if (sorted.length <= MAX_TILES) return sorted;
+      const head = sorted.slice(0, MAX_TILES - 1);
+      const rest = sorted.slice(MAX_TILES - 1);
+      return [
+        ...head,
+        {
+          key: '__other__',
+          label: 'other',
+          tokens: rest.reduce((sum, item) => sum + item.tokens, 0),
+          count: rest.length,
+          other: true,
+          color: '#8a8f98',
+        },
+      ];
+    }
+
+    function NestedTreemap({ items, onSelect, t }) {
       const chartRef = useRef(null);
       const size = useElementSize(chartRef);
-      const color = CATEGORY_COLORS[category.key] ?? '#8a8f98';
-      const items = children.map((child, index) => ({
-        key: child.id,
-        child,
-        tokens: child.tokens,
-        color: shade(color, index),
-      }));
-      const rects = layoutTreemap(items, size.width, size.height);
+      const limited = limitTreemapItems(items);
+      const total = items.reduce((sum, item) => sum + item.tokens, 0);
+      const rects = layoutTreemap(limited, size.width, size.height);
       return h(
         'div',
         { ref: chartRef, className: 'cmk-chart cmk-chartNested' },
         rects.map(({ item, ...rect }) => {
-          const share = total > 0 ? item.child.tokens / total : 0;
-          const meta = `${formatTokens(item.child.tokens)} · ${formatPercent(share)}`;
+          const other = item.other === true;
+          const label = other ? translate(t, 'other') : item.label;
+          const meta = other
+            ? `${formatTokens(item.tokens)} · ${translate(t, 'detail.other', { count: item.count })}`
+            : `${formatTokens(item.tokens)} · ${formatPercent(total > 0 ? item.tokens / total : 0)}`;
           return h(
             'button',
             {
               key: item.key,
               type: 'button',
-              className: 'cmk-tile',
+              className: other ? 'cmk-tile cmk-tileOther' : 'cmk-tile',
               style: { ...tileStyle(rect), '--cmk-tile-color': item.color },
-              title: `${item.child.label} · ${meta}`,
-              'aria-label': `${item.child.label}, ${meta}`,
-              onClick: () => onOpenBlock(item.child, category),
+              title: `${label} · ${meta}`,
+              'aria-label': `${label}, ${meta}`,
+              'aria-disabled': other ? true : undefined,
+              tabIndex: other ? -1 : undefined,
+              onClick: other ? undefined : () => onSelect(item),
             },
             h(
               'span',
               { className: 'cmk-tileLabel' },
-              h('span', { className: 'cmk-tileLabelTitle' }, item.child.label),
+              h('span', { className: 'cmk-tileLabelTitle' }, label),
               h('span', { className: 'cmk-tileLabelMeta' }, meta),
             ),
           );
@@ -756,17 +835,58 @@ window.__ModuleLoader__.load({
 
     function CategoryDetail({ category, data, onBack, onOpenBlock, t }) {
       const [query, setQuery] = useState('');
-      const total = category.tokens;
+      const [selectedGroupKey, setSelectedGroupKey] = useState(null);
+      const [listLimit, setListLimit] = useState(MAX_LIST_ROWS);
+      const groups = useMemo(() => buildGroups(category), [category]);
+      const selectedGroup =
+        selectedGroupKey === null ? undefined : groups.find((group) => group.key === selectedGroupKey);
+      const showGroups = groups.length > 1 && selectedGroup === undefined;
+      const activeChildren = selectedGroup ? selectedGroup.children : category.children;
+      const total = selectedGroup ? selectedGroup.tokens : category.tokens;
+      const color = CATEGORY_COLORS[category.key] ?? '#8a8f98';
+
       const children = useMemo(() => {
         const needle = query.trim().toLowerCase();
-        const sorted = [...category.children].sort((left, right) => right.tokens - left.tokens);
+        const sorted = [...activeChildren].sort((left, right) => right.tokens - left.tokens);
         if (needle.length === 0) return sorted;
         return sorted.filter(
           (child) =>
             child.label.toLowerCase().includes(needle) ||
             String(child.preview ?? '').toLowerCase().includes(needle),
         );
-      }, [category, query]);
+      }, [activeChildren, query]);
+
+      useEffect(() => {
+        setSelectedGroupKey(null);
+        setQuery('');
+        setListLimit(MAX_LIST_ROWS);
+      }, [category.key]);
+      useEffect(() => {
+        setListLimit(MAX_LIST_ROWS);
+      }, [selectedGroupKey, query]);
+      useEffect(() => {
+        if (selectedGroupKey !== null && !groups.some((group) => group.key === selectedGroupKey)) {
+          setSelectedGroupKey(null);
+        }
+      }, [groups, selectedGroupKey]);
+
+      const handleBack = selectedGroup ? () => setSelectedGroupKey(null) : onBack;
+      const groupItems = groups.map((group, index) => ({
+        key: group.key,
+        label: groupLabel(t, group.key),
+        tokens: group.tokens,
+        color: shade(color, index),
+        group,
+      }));
+      const childItems = children.map((child, index) => ({
+        key: child.id,
+        label: child.label,
+        tokens: child.tokens,
+        color: shade(color, index),
+        child,
+      }));
+      const visibleChildren = children.slice(0, listLimit);
+
       return h(
         'div',
         null,
@@ -775,7 +895,7 @@ window.__ModuleLoader__.load({
           { className: 'cmk-backRow' },
           h(
             'button',
-            { type: 'button', className: 'cmk-back', onClick: onBack },
+            { type: 'button', className: 'cmk-back', onClick: handleBack },
             h('span', { 'aria-hidden': true }, '‹'),
             translate(t, 'back'),
           ),
@@ -786,70 +906,117 @@ window.__ModuleLoader__.load({
             h(
               'div',
               { className: 'cmk-detailMeta' },
-              `${formatTokens(category.tokens)} · ${formatPercent(
-                data.totalTokens === 0 ? 0 : category.tokens / data.totalTokens,
-              )}`,
+              selectedGroup !== undefined
+                ? `${groupLabel(t, selectedGroup.key)} · ${formatTokens(selectedGroup.tokens)}`
+                : `${formatTokens(category.tokens)} · ${formatPercent(
+                    data.totalTokens === 0 ? 0 : category.tokens / data.totalTokens,
+                  )}`,
             ),
           ),
-          h('span', { className: 'cmk-swatch', style: { backgroundColor: CATEGORY_COLORS[category.key] } }),
+          h('span', { className: 'cmk-swatch', style: { backgroundColor: color } }),
         ),
-        h(ContributionTreemap, {
-          category,
-          children: category.children,
-          total,
-          onOpenBlock,
+        h(NestedTreemap, {
+          items: showGroups ? groupItems : childItems,
+          onSelect: (item) => {
+            if (showGroups) setSelectedGroupKey(item.group.key);
+            else onOpenBlock(item.child, category);
+          },
           t,
         }),
-        category.children.length > 10
-          ? h('input', {
-              className: 'cmk-search',
-              value: query,
-              placeholder: translate(t, 'search'),
-              onChange: (event) => setQuery(event.target.value),
-              'aria-label': translate(t, 'search'),
-            })
-          : null,
-        h(
-          'div',
-          { className: 'cmk-list' },
-          children.map((child) => {
-            const share = total === 0 ? 0 : child.tokens / total;
-            return h(
-              'button',
-              {
-                key: child.id,
-                type: 'button',
-                className: 'cmk-row',
-                onClick: () => onOpenBlock(child, category),
-              },
-              h('span', {
-                className: 'cmk-swatch',
-                style: {
-                  backgroundColor: shade(CATEGORY_COLORS[category.key] ?? '#8a8f98', children.indexOf(child)),
-                },
-              }),
-              h(
-                'span',
-                { className: 'cmk-rowText' },
-                h('span', { className: 'cmk-rowLabel' }, child.label),
-                child.preview ? h('span', { className: 'cmk-rowPreview' }, child.preview) : null,
-              ),
-              h(
-                'span',
-                { className: 'cmk-rowBar', 'aria-hidden': true },
-                h('span', {
-                  className: 'cmk-rowBarFill',
-                  style: {
-                    display: 'block',
-                    width: `${String(Math.max(2, share * 100))}%`,
-                    backgroundColor: CATEGORY_COLORS[category.key] ?? '#8a8f98',
+        showGroups
+          ? h(
+              'div',
+              { className: 'cmk-list' },
+              groupItems.map((item) =>
+                h(
+                  'button',
+                  {
+                    key: item.key,
+                    type: 'button',
+                    className: 'cmk-row',
+                    onClick: () => setSelectedGroupKey(item.group.key),
                   },
+                  h('span', {
+                    className: 'cmk-swatch',
+                    style: { backgroundColor: item.color },
+                  }),
+                  h(
+                    'span',
+                    { className: 'cmk-rowText' },
+                    h('span', { className: 'cmk-rowLabel' }, item.label),
+                    h(
+                      'span',
+                      { className: 'cmk-rowPreview' },
+                      translate(t, 'items', { count: item.group.children.length }),
+                    ),
+                  ),
+                  h('span', { className: 'cmk-rowNum' }, formatTokens(item.tokens)),
+                ),
+              ),
+            )
+          : h(
+              Fragment,
+              null,
+              children.length > 10
+                ? h('input', {
+                    className: 'cmk-search',
+                    value: query,
+                    placeholder: translate(t, 'search'),
+                    onChange: (event) => setQuery(event.target.value),
+                    'aria-label': translate(t, 'search'),
+                  })
+                : null,
+              h(
+                'div',
+                { className: 'cmk-list' },
+                visibleChildren.map((child, index) => {
+                  const share = total === 0 ? 0 : child.tokens / total;
+                  return h(
+                    'button',
+                    {
+                      key: child.id,
+                      type: 'button',
+                      className: 'cmk-row',
+                      onClick: () => onOpenBlock(child, category),
+                    },
+                    h('span', {
+                      className: 'cmk-swatch',
+                      style: { backgroundColor: shade(color, index) },
+                    }),
+                    h(
+                      'span',
+                      { className: 'cmk-rowText' },
+                      h('span', { className: 'cmk-rowLabel' }, child.label),
+                      child.preview ? h('span', { className: 'cmk-rowPreview' }, child.preview) : null,
+                    ),
+                    h(
+                      'span',
+                      { className: 'cmk-rowBar', 'aria-hidden': true },
+                      h('span', {
+                        className: 'cmk-rowBarFill',
+                        style: {
+                          display: 'block',
+                          width: `${String(Math.max(2, share * 100))}%`,
+                          backgroundColor: color,
+                        },
+                      }),
+                    ),
+                    h('span', { className: 'cmk-rowNum' }, formatTokens(child.tokens)),
+                  );
                 }),
               ),
-              h('span', { className: 'cmk-rowNum' }, formatTokens(child.tokens)),
-            );
-          }),
-        ),
+              children.length > listLimit
+                ? h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'cmk-retry',
+                      onClick: () => setListLimit((value) => value + MAX_LIST_ROWS),
+                    },
+                    translate(t, 'showMore'),
+                  )
+                : null,
+            ),
       );
     }
 

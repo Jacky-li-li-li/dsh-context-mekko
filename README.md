@@ -15,12 +15,16 @@ and inspect the exact content that was sent to the model.
 - Live: the tab refreshes on committed session events (debounced) while it is
   open; the header percentage follows the existing `contextPressure`
   projection continuously.
-- Drill-down: category tile → contribution treemap and searchable list → the
-  rendered content, with token estimates and source metadata.
+- Hierarchical drill-down: category tile → semantic groups (Conversation:
+  User/Assistant; tool results: tool name; system: prompt/instructions) →
+  contribution treemap and searchable list → the rendered content, with token
+  estimates and source metadata. Categories with only one group skip the group
+  level.
 
 Clicking the header tag opens or focuses the `Context` tab in the right
-Sidebar. Opening a category lists every contribution; opening one shows the
-exact message, tool output, tool schema, runtime section, or skill entry:
+Sidebar. Opening a category first shows its groups; opening a group shows its
+contribution treemap and list; opening a contribution shows the exact message,
+tool output, tool schema, runtime section, or skill entry:
 
 ![Category drill-down](assets/context-mekko-detail.png)
 - Zero model impact: the plugin adds no model-visible content, writes no
@@ -115,6 +119,24 @@ with React from the host module table.
   bodies are not part of the context and are not shown.
 - Long sessions are recomputed on demand when the tab is active; the plugin
   does not keep a background projection.
+- Rendering is bounded: a nested treemap caps at 200 tiles (the remainder
+  collapses into one "Other" tile), and the detail list renders 200 rows at a
+  time behind "Show more". Content is still fetched only when a contribution is
+  opened, so large sessions do not accumulate content strings or timers in the
+  client.
+
+## Performance guard
+
+The chart and list are intentionally bounded for long sessions:
+
+- `MAX_TILES = 200`: inputs above 200 collapse into one aggregate tile.
+- `MAX_LIST_ROWS = 200`: the list grows only when the user asks for more.
+- Content bodies are fetched lazily and are not cached by the browser plugin.
+
+A local Node benchmark of the extracted layout function gave the following:
+200/1k/5k/20k input items all chart at 200 tiles, one layout taking roughly
+0.24–1.03 ms and leaving about 25–42 KB after GC. The live UI keeps one
+ResizeObserver for the active chart, not one per tile.
 - The tab shows the current session only. Sub-session aggregation is future
   work.
 

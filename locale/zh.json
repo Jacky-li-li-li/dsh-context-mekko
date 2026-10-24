@@ -34,7 +34,16 @@
     "assistant": "助手",
     "tool": "工具",
     "system": "系统",
-    "context": "上下文"
+    "context": "上下文",
+    "developer": "开发者消息",
+    "instructions": "工作区指令",
+    "injected": "注入消息",
+    "other": "其他",
+    "team": "团队",
+    "goal": "目标",
+    "plan": "计划",
+    "compaction": "压缩摘要",
+    "tool-jobs": "工具任务"
   },
   "detail": {
     "title": "上下文内容",
@@ -43,5 +52,6 @@
     "truncated": "内容过长，已截断显示。",
     "noContent": "该部分没有可渲染内容。"
   },
-  "topContributors": "占用排行"
+  "topContributors": "占用排行",
+  "showMore": "显示更多"
 }
