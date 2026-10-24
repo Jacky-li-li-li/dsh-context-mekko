@@ -492,26 +492,24 @@ export function buildBreakdown(source) {
 
     if (classification.kind === "instructions") {
       const files = splitInstructionFiles(messageText(message));
-      if (files.length > 1) {
-        const prices = allocate(
-          files.map((file) => file.body.length),
-          tokens,
-        );
-        files.forEach((file, index) => {
-          category.children.push({
-            id: `instr:${String(seq)}:${String(index)}`,
-            label: file.label,
-            tokens: prices[index] ?? 0,
-            kind: "text",
-            preview: excerpt(file.body, 96),
-            contentId: `instr:${String(seq)}:${String(index)}`,
-            group: "instructions",
-            seq,
-          });
+      const prices = allocate(
+        files.map((file) => file.body.length),
+        tokens,
+      );
+      files.forEach((file, index) => {
+        category.children.push({
+          id: `instr:${String(seq)}:${String(index)}`,
+          label: file.label,
+          tokens: prices[index] ?? 0,
+          kind: "text",
+          preview: excerpt(file.body, 96),
+          contentId: `instr:${String(seq)}:${String(index)}`,
+          group: "instructions",
+          seq,
         });
-        category.tokens += tokens;
-        continue;
-      }
+      });
+      category.tokens += tokens;
+      continue;
     }
 
     if (classification.kind === "catalog") {
