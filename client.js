@@ -713,25 +713,25 @@ window.__ModuleLoader__.load({
       return h(
         'div',
         { ref: chartRef, className: 'cmk-chart' },
+        freeTokens > 0 && freeHeight > 0
+          ? h(FreeTile, {
+              key: 'free',
+              rect: { x: 0, y: 0, width: size.width, height: freeHeight },
+              tokens: freeTokens,
+              windowTokens,
+              t,
+            })
+          : null,
         rects.map(({ item, ...rect }) =>
           h(MekkoTile, {
             key: item.key,
-            rect,
+            rect: { ...rect, y: rect.y + freeHeight },
             item,
             share: windowTokens > 0 ? item.category.tokens / windowTokens : 0,
             onSelectCategory,
             t,
           }),
         ),
-        freeTokens > 0 && freeHeight > 0
-          ? h(FreeTile, {
-              key: 'free',
-              rect: { x: 0, y: usedHeight, width: size.width, height: freeHeight },
-              tokens: freeTokens,
-              windowTokens,
-              t,
-            })
-          : null,
       );
     }
 

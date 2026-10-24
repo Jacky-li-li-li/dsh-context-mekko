@@ -1,6 +1,6 @@
 {
   "name": "dsh-context-mekko",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Live squarified treemap of the model-visible context window, with click-through inspection of every contribution.",
   "type": "module",
   "license": "MIT",

@@ -36,7 +36,7 @@ The chart follows the current retained model-visible surface, not the raw
 session history. **The whole chart area represents the full context window**:
 every category is one tile, laid out with a squarified treemap so tile area is
 proportional to its share. The neutral **Free** tile is the remaining space
-shown below the used-context area.
+shown above the used-context area.
 
 All displayed figures are normalized to the same `contextPressure` reading as
 the composer's Context meter: used tokens, window, percentages, Free, tile
