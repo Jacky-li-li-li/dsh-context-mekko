@@ -1,22 +1,24 @@
 # Context Mekko
 
-![Context Mekko drawer](assets/context-mekko.png)
+![Context Mekko tab](assets/context-mekko.png)
 
 A DSH plugin that adds a **Context** tag to the conversation header and opens a
-live **Marimekko** breakdown of the model-visible context window. Click any
-block to inspect the exact content that was sent to the model.
+native **right Sidebar tab** with a live **Marimekko** breakdown of the
+model-visible context window. Click any block to inspect the exact content that
+was sent to the model.
 
 - Header entry: `Context` pill with the provider-reported occupancy percentage.
-- Right drawer: it overlays the right side of the conversation without
-  resizing or reflowing the chat.
-- Live: the drawer refreshes on committed session events (debounced) while it
-  is open; the header percentage follows the existing `contextPressure`
+- Native tab: the chart lives in a normal right Sidebar tab, with the panel's
+  own close, split, fullscreen, drag/dock, and layout persistence behavior.
+- Live: the tab refreshes on committed session events (debounced) while it is
+  open; the header percentage follows the existing `contextPressure`
   projection continuously.
 - Drill-down: category → contribution list → the rendered content, with token
   estimates and source metadata.
 
-Opening a category lists every contribution; opening one shows the exact
-message, tool output, tool schema, runtime section, or skill entry:
+Clicking the header tag opens or focuses the `Context` tab in the right
+Sidebar. Opening a category lists every contribution; opening one shows the
+exact message, tool output, tool schema, runtime section, or skill entry:
 
 ![Category drill-down](assets/context-mekko-detail.png)
 - Zero model impact: the plugin adds no model-visible content, writes no
@@ -62,7 +64,9 @@ For a local checkout, link the package directory instead:
 plugin_manager(action: "install_bundle", target: "/absolute/path/to/context-mekko")
 ```
 
-Then reload the conversation page if the header entry is not visible yet.
+Then click the **Context** pill in the conversation header; DSH opens or
+focuses the `Context` tab in the right Sidebar. Reload the page only if the
+header entry itself is not visible yet.
 
 ### Development install
 
@@ -86,9 +90,9 @@ node --check client.js
 ```
 
 `index.js` is the Host half: it registers two authenticated GET routes under
-`/api/context-mekko`. `client.js` is the browser half: it registers into
-`conversation.session.header.utilities` and renders the drawer with React from
-the host module table.
+`/api/context-mekko`. `client.js` is the browser half: it registers the header
+entry, a `sidebarRightTabs` page type, and its `sidebar.right.pane.tab` body
+with React from the host module table.
 
 ## Limitations
 
@@ -99,9 +103,9 @@ the host module table.
   version cannot split it into its internal sections.
 - The skill catalog carries skill names and descriptions only; full `SKILL.md`
   bodies are not part of the context and are not shown.
-- Long sessions are recomputed on demand when the drawer opens; the plugin does
-  not keep a background projection.
-- The drawer shows the current session only. Sub-session aggregation is future
+- Long sessions are recomputed on demand when the tab is active; the plugin
+  does not keep a background projection.
+- The tab shows the current session only. Sub-session aggregation is future
   work.
 
 ## License

@@ -2,13 +2,14 @@ window.__ModuleLoader__.load({
   id: 'dsh-context-mekko',
   factory(require) {
     const React = require('react');
-    const ReactDOM = require('react-dom');
 
     const h = React.createElement;
     const { Fragment, useCallback, useEffect, useMemo, useRef, useState } = React;
 
     const NS = 'context-mekko';
     const PACKAGE = 'dsh-context-mekko';
+    const TAB_ID = 'dsh-context-mekko/tab';
+    const TAB_KIND = 'contextMekko';
 
     const zh = {
       tag: 'Context',
@@ -132,18 +133,15 @@ window.__ModuleLoader__.load({
 .cmk-tag:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,#4c8bf5);outline-offset:2px}
 .cmk-tagGlyph{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;flex:none}
 .cmk-tagNum{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-tertiary,#888);padding-left:2px}
-.cmk-drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100vw);z-index:1080;display:flex;flex-direction:column;box-sizing:border-box;background:var(--dsw-alias-bg-base,#fff);color:var(--dsw-alias-label-primary,#111);border-left:1px solid var(--dsw-alias-border-l3,rgba(128,128,128,.18));box-shadow:var(--dsw-elevation-prominent,0 10px 40px rgba(0,0,0,.18));font-family:inherit;font-size:13px;line-height:20px}
-.cmk-drawer *{box-sizing:border-box}
-.cmk-head{flex:none;display:flex;align-items:flex-start;gap:10px;padding:14px 16px 12px;border-bottom:1px solid var(--dsw-alias-border-l3,rgba(128,128,128,.16))}
-.cmk-headText{flex:1;min-width:0}
-.cmk-title{font-size:15px;line-height:22px;font-weight:600;margin:0;color:var(--dsw-alias-label-primary,#111)}
-.cmk-subtitle{margin:1px 0 0;font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary,#888);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmk-panel{height:100%;min-height:0;display:flex;flex-direction:column;box-sizing:border-box;background:transparent;color:var(--dsw-alias-label-primary,#111);font-family:inherit;font-size:13px;line-height:20px}
+.cmk-panel *{box-sizing:border-box}
+.cmk-panelHead{flex:none;display:flex;align-items:flex-start;gap:10px;padding:12px 14px 10px;border-bottom:1px solid var(--dsw-alias-border-l3,rgba(128,128,128,.16))}
+.cmk-panelText{flex:1;min-width:0}
+.cmk-panelTitle{font-size:14px;line-height:21px;font-weight:600;margin:0;color:var(--dsw-alias-label-primary,#111)}
+.cmk-panelSubtitle{margin:1px 0 0;font-size:11px;line-height:17px;color:var(--dsw-alias-label-tertiary,#888);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cmk-headSide{flex:none;display:flex;align-items:center;gap:8px;padding-top:1px}
 .cmk-ring{flex:none;display:inline-flex;align-items:center;justify-content:center}
-.cmk-close{flex:none;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary,#555);cursor:pointer}
-.cmk-close:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(128,128,128,.1));color:var(--dsw-alias-label-primary,#111)}
-.cmk-close:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,#4c8bf5);outline-offset:1px}
-.cmk-body{flex:1;min-height:0;overflow:auto;padding:14px 16px 28px}
+.cmk-panelBody{flex:1;min-height:0;overflow:auto;padding:12px 14px 22px}
 .cmk-foot{flex:none;padding:9px 16px 11px;border-top:1px solid var(--dsw-alias-border-l3,rgba(128,128,128,.16));color:var(--dsw-alias-label-tertiary,#888);font-size:11px;line-height:16px}
 .cmk-chart{display:flex;gap:2px;height:168px;width:100%;align-items:stretch;border-radius:10px;overflow:hidden;background:var(--dsw-alias-interactive-bg-hover,rgba(128,128,128,.06))}
 .cmk-col{display:flex;flex-direction:column;gap:2px;min-width:3px;overflow:hidden;border-radius:4px;background:transparent}
@@ -193,7 +191,7 @@ window.__ModuleLoader__.load({
 .cmk-retry{height:28px;padding:0 12px;border:1px solid var(--dsw-alias-border-l3,rgba(128,128,128,.2));border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary,#555);font:inherit;font-size:12px;cursor:pointer}
 .cmk-retry:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(128,128,128,.1))}
 .cmk-empty{padding:28px 0;color:var(--dsw-alias-label-tertiary,#888);font-size:12px;text-align:center}
-@media (max-width:640px){.cmk-drawer{width:100vw;border-left:0}.cmk-chart{height:140px}}
+@media (max-width:640px){.cmk-chart{height:140px}}
 `;
 
     function readPath(root, path) {
@@ -721,29 +719,21 @@ window.__ModuleLoader__.load({
       );
     }
 
-    function ContextDrawer({ sessionId, onClose, useProjection, t }) {
+    function ContextPanel({ sessionId: sessionIdProp, useTabInfo, useProjection, t }) {
+      const tabInfo = typeof useTabInfo === 'function' ? useTabInfo() : undefined;
+      const params = tabInfo?.tab?.navigation?.params;
+      const sessionId =
+        typeof sessionIdProp === 'string' && sessionIdProp.length > 0
+          ? sessionIdProp
+          : typeof params?.sessionId === 'string'
+            ? params.sessionId
+            : undefined;
       const { pressure, key } = useChangeKey(useProjection);
       const breakdown = useBreakdown(sessionId, key);
       const [view, setView] = useState({ kind: 'overview' });
-      const closeRef = useRef(null);
       const data = breakdown.data;
-
-      useEffect(() => {
-        closeRef.current?.focus();
-      }, []);
-      useEffect(() => {
-        const onKeyDown = (event) => {
-          if (event.key === 'Escape') {
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation();
-            onClose();
-          }
-        };
-        document.addEventListener('keydown', onKeyDown, true);
-        return () => document.removeEventListener('keydown', onKeyDown, true);
-      }, [onClose]);
       const initialSessionRef = useRef(sessionId);
+
       useEffect(() => {
         if (initialSessionRef.current === sessionId) return;
         initialSessionRef.current = sessionId;
@@ -758,13 +748,14 @@ window.__ModuleLoader__.load({
 
       const used = pressure?.projectedTokens ?? pressure?.pressureTokens;
       const windowSize = pressure?.contextWindow ?? data?.contextWindow;
-      const percent = typeof used === 'number' && typeof windowSize === 'number' && windowSize > 0
-        ? Math.min(100, (used / windowSize) * 100)
-        : undefined;
-
-      const category = view.kind === 'category' && data
-        ? data.categories.find((candidate) => candidate.key === view.key)
-        : undefined;
+      const percent =
+        typeof used === 'number' && typeof windowSize === 'number' && windowSize > 0
+          ? Math.min(100, (used / windowSize) * 100)
+          : undefined;
+      const category =
+        view.kind === 'category' && data
+          ? data.categories.find((candidate) => candidate.key === view.key)
+          : undefined;
 
       const openBlock = (block, fromCategory) => {
         setView({
@@ -818,59 +809,39 @@ window.__ModuleLoader__.load({
         });
       }
 
-      return ReactDOM.createPortal(
+      return h(
+        'div',
+        { className: 'cmk-panel', role: 'region', 'aria-label': translate(t, 'title') },
         h(
           'div',
-          {
-            className: 'cmk-drawer',
-            role: 'dialog',
-            'aria-modal': 'false',
-            'aria-label': translate(t, 'title'),
-          },
+          { className: 'cmk-panelHead' },
           h(
             'div',
-            { className: 'cmk-head' },
-            h(
-              'div',
-              { className: 'cmk-headText' },
-              h('h2', { className: 'cmk-title' }, translate(t, 'title')),
-              h('p', { className: 'cmk-subtitle' }, translate(t, 'subtitle')),
-            ),
-            h(
-              'div',
-              { className: 'cmk-headSide' },
-              typeof percent === 'number' ? h(Ring, { percent }) : null,
-              typeof used === 'number'
-                ? h(
-                    'span',
-                    { className: 'cmk-tagNum', style: { color: 'var(--dsw-alias-label-secondary, #555)' } },
-                    typeof windowSize === 'number'
-                      ? `~${formatTokens(used)} / ${formatTokens(windowSize)}`
-                      : `~${formatTokens(used)}`,
-                  )
-                : null,
-              h(
-                'button',
-                {
-                  ref: closeRef,
-                  type: 'button',
-                  className: 'cmk-close',
-                  onClick: onClose,
-                  'aria-label': translate(t, 'close'),
-                  title: translate(t, 'close'),
-                },
-                h('span', { 'aria-hidden': true, style: { fontSize: 18, lineHeight: '18px' } }, '×'),
-              ),
-            ),
+            { className: 'cmk-panelText' },
+            h('div', { className: 'cmk-panelTitle' }, translate(t, 'title')),
+            h('div', { className: 'cmk-panelSubtitle' }, translate(t, 'subtitle')),
           ),
-          h('div', { className: 'cmk-body' }, content),
-          h('div', { className: 'cmk-foot' }, translate(t, 'approx')),
+          h(
+            'div',
+            { className: 'cmk-headSide' },
+            typeof percent === 'number' ? h(Ring, { percent }) : null,
+            typeof used === 'number'
+              ? h(
+                  'span',
+                  { className: 'cmk-tagNum', style: { color: 'var(--dsw-alias-label-secondary, #555)' } },
+                  typeof windowSize === 'number'
+                    ? `~${formatTokens(used)} / ${formatTokens(windowSize)}`
+                    : `~${formatTokens(used)}`,
+                )
+              : null,
+          ),
         ),
-        document.body,
+        h('div', { className: 'cmk-panelBody' }, content),
+        h('div', { className: 'cmk-foot' }, translate(t, 'approx')),
       );
     }
 
-    class DrawerBoundary extends React.Component {
+    class TabBoundary extends React.Component {
       constructor(props) {
         super(props);
         this.state = { error: null };
@@ -879,18 +850,22 @@ window.__ModuleLoader__.load({
         return { error };
       }
       componentDidCatch(error) {
-        console.error('[context-mekko] drawer crashed', error);
+        console.error('[context-mekko] panel crashed', error);
       }
       render() {
         if (this.state.error !== null) {
           return h(
             'div',
-            { className: 'cmk-drawer' },
+            { className: 'cmk-panel' },
             h(
               'div',
-              { className: 'cmk-state' },
-              h('span', null, 'Context drawer crashed'),
-              h('pre', { className: 'cmk-pre', style: { maxWidth: '100%', textAlign: 'left' } }, String(this.state.error?.stack ?? this.state.error)),
+              { className: 'cmk-state cmk-panelBody' },
+              h('span', null, 'Context panel crashed'),
+              h(
+                'pre',
+                { className: 'cmk-pre', style: { maxWidth: '100%', textAlign: 'left' } },
+                String(this.state.error?.stack ?? this.state.error),
+              ),
             ),
           );
         }
@@ -898,54 +873,40 @@ window.__ModuleLoader__.load({
       }
     }
 
-    function ContextTag(props) {
-      const { sessionId, useProjection, t } = props;
-      const [open, setOpen] = useState(false);
-      const triggerRef = useRef(null);
+    function ContextTab(props) {
+      return h(TabBoundary, null, h(ContextPanel, props));
+    }
+
+    function ContextTag({ sessionId, useProjection, openContext, t }) {
       const { pressure } = useChangeKey(useProjection);
       if (typeof sessionId !== 'string' || sessionId.length === 0) return null;
       const used = pressure?.projectedTokens ?? pressure?.pressureTokens;
       const windowSize = pressure?.contextWindow;
-      const percent = typeof used === 'number' && typeof windowSize === 'number' && windowSize > 0
-        ? Math.min(100, Math.round((used / windowSize) * 100))
-        : undefined;
-      const close = () => {
-        setOpen(false);
-        requestAnimationFrame(() => triggerRef.current?.focus());
-      };
+      const percent =
+        typeof used === 'number' && typeof windowSize === 'number' && windowSize > 0
+          ? Math.min(100, Math.round((used / windowSize) * 100))
+          : undefined;
       return h(
-        Fragment,
-        null,
-        h(
-          'button',
-          {
-            ref: triggerRef,
-            type: 'button',
-            className: 'cmk-tag',
-            'aria-haspopup': 'dialog',
-            'aria-expanded': open,
-            'aria-label': translate(t, 'tagTitle'),
-            title: translate(t, 'tagTitle'),
-            onClick: () => setOpen((value) => !value),
+        'button',
+        {
+          type: 'button',
+          className: 'cmk-tag',
+          'aria-label': translate(t, 'tagTitle'),
+          title: translate(t, 'tagTitle'),
+          onClick: () => {
+            if (typeof openContext === 'function') openContext(sessionId);
           },
-          h('span', { className: 'cmk-tagGlyph' }, h(CategoryGlyph, { color: '#8b9bb4' })),
-          h('span', null, translate(t, 'tag')),
-          typeof percent === 'number' ? h('span', { className: 'cmk-tagNum' }, `${String(percent)}%`) : null,
-        ),
-        open
-          ? h(DrawerBoundary, null, h(ContextDrawer, {
-              sessionId,
-              onClose: close,
-              useProjection,
-              t,
-            }))
-          : null,
+        },
+        h('span', { className: 'cmk-tagGlyph' }, h(CategoryGlyph, { color: '#8b9bb4' })),
+        h('span', null, translate(t, 'tag')),
+        typeof percent === 'number' ? h('span', { className: 'cmk-tagNum' }, `${String(percent)}%`) : null,
       );
     }
 
-    const inject = ['slots', 'locale'];
+    const inject = ['slots', 'locale', 'sidebarRight', 'sidebarRightTabs'];
 
     function apply(ctx) {
+      const t = ctx.locale.bind(NS);
       ctx.effect(() => ctx.locale.register(NS, { en, zh }), 'context-mekko: dictionaries');
       ctx.effect(() => {
         const style = document.createElement('style');
@@ -954,6 +915,30 @@ window.__ModuleLoader__.load({
         document.head.appendChild(style);
         return () => style.remove();
       }, 'context-mekko: styles');
+      ctx.effect(
+        () =>
+          ctx.sidebarRightTabs.register({
+            id: TAB_ID,
+            kind: TAB_KIND,
+            priority: 'extension',
+            title: () => t('tag'),
+          }),
+        'context-mekko: tab type',
+      );
+      ctx.effect(
+        () =>
+          ctx.slots.inject('sidebar.right.pane.tab', () =>
+            ctx.slots.register(
+              {
+                name: 'sidebar.right.pane.tab',
+                key: TAB_ID,
+                locale: NS,
+              },
+              ContextTab,
+            ),
+          ),
+        'context-mekko: tab body',
+      );
       ctx.slots.inject('conversation.session.header.utilities', () =>
         ctx.slots.register(
           {
@@ -961,6 +946,11 @@ window.__ModuleLoader__.load({
             id: 'context-mekko',
             order: 10,
             locale: NS,
+            inject: () => ({
+              openContext: (sessionId) => {
+                ctx.sidebarRight.openTab(TAB_KIND, { params: { sessionId } });
+              },
+            }),
           },
           ContextTag,
         ),
