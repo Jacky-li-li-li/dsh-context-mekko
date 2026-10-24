@@ -35,11 +35,18 @@ tool output, tool schema, runtime section, or skill entry:
 The chart follows the current retained model-visible surface, not the raw
 session history. **The whole chart area represents the full context window**:
 every category is one tile, laid out with a squarified treemap so tile area is
-proportional to its token share, and the neutral **Free** tile is the remaining
-space anchored to the right edge. Used area and Free follow provider-reported pressure when available
-(with category proportions taken from the estimated breakdown); otherwise they
-fall back to the estimated total. Larger tiles show their own label, token
-count, and percentage; smaller tiles keep their tooltip and legend entry.
+proportional to its share. The neutral **Free** tile is the remaining space
+anchored to the right edge.
+
+All displayed figures are normalized to the same `contextPressure` reading as
+the composer's Context meter: used tokens, window, percentages, Free, tile
+tokens, legend figures, and top contributors. The category proportions still
+come from the estimated breakdown, but they are scaled so the used total equals
+`contextPressure`; when pressure is unavailable the chart falls back to the
+estimated total. Top-level category percentages are shares of the whole window,
+so categories plus Free add to 100%. Deeper drill-down percentages are shares
+of their parent group/category. Larger tiles show their own label, token count,
+and percentage; smaller tiles keep their tooltip and legend entry.
 
 Categories:
 

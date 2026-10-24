@@ -734,7 +734,7 @@ window.__ModuleLoader__.load({
             key: item.key,
             rect,
             item,
-            share: estimatedTotal > 0 ? item.category.tokens / estimatedTotal : 0,
+            share: windowTokens > 0 ? item.category.tokens / windowTokens : 0,
             onSelectCategory,
             t,
           }),
@@ -798,19 +798,25 @@ window.__ModuleLoader__.load({
       const used = Math.min(Math.max(reportedUsed, 0), windowTokens);
       const layoutScale = used / data.totalTokens;
       const freeTokens = Math.max(windowTokens - used, 0);
+      const displayCategories = categories.map((category) => ({
+        ...category,
+        tokens: category.tokens * layoutScale,
+        children: category.children.map((child) => ({ ...child, tokens: child.tokens * layoutScale })),
+      }));
       return h(
         'div',
         null,
         h('div', { className: 'cmk-totals' },
-          h('span', null, h('b', null, formatTokens(data.totalTokens))),
-          h('span', null, translate(t, 'tokens')),
+          h('span', null, h('b', null, `~${formatTokens(used)}`)),
+          h('span', null, translate(t, 'of')),
+          h('span', null, formatTokens(windowTokens)),
           h('span', null, '·'),
-          h('span', null, translate(t, 'estimated')),
+          h('span', null, formatPercent(windowTokens > 0 ? used / windowTokens : 0)),
         ),
-        h(Mekko, { categories, layoutScale, freeTokens, windowTokens, onSelectCategory, t }),
-        h(Legend, { categories, total: data.totalTokens, onSelectCategory, t }),
+        h(Mekko, { categories: displayCategories, freeTokens, windowTokens, onSelectCategory, t }),
+        h(Legend, { categories: displayCategories, total: windowTokens, onSelectCategory, t }),
         (() => {
-          const top = categories
+          const top = displayCategories
             .flatMap((category) => category.children.map((child) => ({ child, category })))
             .filter((entry) => entry.child.tokens > 0)
             .sort((left, right) => right.child.tokens - left.child.tokens)
@@ -855,20 +861,39 @@ window.__ModuleLoader__.load({
       );
     }
 
-    function CategoryDetail({ category, data, onBack, onOpenBlock, t }) {
+    function CategoryDetail({ category, data, usedTokens, contextWindow, onBack, onOpenBlock, t }) {
       const [query, setQuery] = useState('');
       const [selectedGroupKey, setSelectedGroupKey] = useState(null);
       const [listLimit, setListLimit] = useState(MAX_LIST_ROWS);
+      const windowTokens =
+        Number.isFinite(contextWindow) && contextWindow > 0
+          ? contextWindow
+          : Number.isFinite(data.contextWindow) && data.contextWindow > 0
+            ? data.contextWindow
+            : Math.max(data.totalTokens, 1);
+      const reportedUsed = Number.isFinite(usedTokens) && usedTokens >= 0 ? usedTokens : data.totalTokens;
+      const used = Math.min(Math.max(reportedUsed, 0), windowTokens);
+      const displayScale = data.totalTokens > 0 ? used / data.totalTokens : 1;
       const groups = useMemo(() => buildGroups(category), [category]);
+      const displayGroups = useMemo(
+        () =>
+          groups.map((group) => ({
+            ...group,
+            tokens: group.tokens * displayScale,
+            children: group.children.map((child) => ({ ...child, tokens: child.tokens * displayScale })),
+          })),
+        [groups, displayScale],
+      );
       const selectedGroup =
-        selectedGroupKey === null ? undefined : groups.find((group) => group.key === selectedGroupKey);
-      const showGroups = groups.length > 1 && selectedGroup === undefined;
+        selectedGroupKey === null ? undefined : displayGroups.find((group) => group.key === selectedGroupKey);
+      const showGroups = displayGroups.length > 1 && selectedGroup === undefined;
       const activeChildren = selectedGroup
         ? selectedGroup.children
-        : groups.length === 1
-          ? groups[0].children
-          : category.children;
-      const total = selectedGroup ? selectedGroup.tokens : category.tokens;
+        : displayGroups.length === 1
+          ? displayGroups[0].children
+          : displayGroups.flatMap((group) => group.children);
+      const displayCategoryTokens = category.tokens * displayScale;
+      const total = selectedGroup ? selectedGroup.tokens : displayCategoryTokens;
       const color = CATEGORY_COLORS[category.key] ?? '#8a8f98';
 
       const children = useMemo(() => {
@@ -891,13 +916,13 @@ window.__ModuleLoader__.load({
         setListLimit(MAX_LIST_ROWS);
       }, [selectedGroupKey, query]);
       useEffect(() => {
-        if (selectedGroupKey !== null && !groups.some((group) => group.key === selectedGroupKey)) {
+        if (selectedGroupKey !== null && !displayGroups.some((group) => group.key === selectedGroupKey)) {
           setSelectedGroupKey(null);
         }
-      }, [groups, selectedGroupKey]);
+      }, [displayGroups, selectedGroupKey]);
 
       const handleBack = selectedGroup ? () => setSelectedGroupKey(null) : onBack;
-      const groupItems = groups.map((group, index) => ({
+      const groupItems = displayGroups.map((group, index) => ({
         key: group.key,
         label: groupLabel(t, group.key),
         tokens: group.tokens,
@@ -933,9 +958,11 @@ window.__ModuleLoader__.load({
               'div',
               { className: 'cmk-detailMeta' },
               selectedGroup !== undefined
-                ? `${groupLabel(t, selectedGroup.key)} · ${formatTokens(selectedGroup.tokens)}`
-                : `${formatTokens(category.tokens)} · ${formatPercent(
-                    data.totalTokens === 0 ? 0 : category.tokens / data.totalTokens,
+                ? `${groupLabel(t, selectedGroup.key)} · ${formatTokens(selectedGroup.tokens)} · ${formatPercent(
+                    displayCategoryTokens > 0 ? selectedGroup.tokens / displayCategoryTokens : 0,
+                  )}`
+                : `${formatTokens(displayCategoryTokens)} · ${formatPercent(
+                    windowTokens > 0 ? displayCategoryTokens / windowTokens : 0,
                   )}`,
             ),
           ),
@@ -1208,6 +1235,8 @@ window.__ModuleLoader__.load({
         content = h(CategoryDetail, {
           category,
           data,
+          usedTokens: used,
+          contextWindow: windowSize,
           onBack: () => setView({ kind: 'overview' }),
           onOpenBlock: (block) => openBlock(block, category),
           t,
