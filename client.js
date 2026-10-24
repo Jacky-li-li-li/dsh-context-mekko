@@ -566,10 +566,19 @@ window.__ModuleLoader__.load({
       if (!previous || previous.sessionId !== next.sessionId) return null;
       if (next.compactionSeq !== null && next.compactionSeq !== previous.compactionSeq) return 'compaction';
       if (previous.window !== next.window) return 'window';
+      const previousTokens = new Map(previous.categories.map((category) => [category.key, category.tokens]));
+      let growth = 0;
+      let shrink = 0;
+      for (const category of next.categories) {
+        const delta = category.tokens - (previousTokens.get(category.key) ?? 0);
+        if (delta > 0) growth += delta;
+        else shrink -= delta;
+      }
       const delta = next.used - previous.used;
-      const threshold = Math.max(1024, next.window * 0.002);
-      if (Math.abs(delta) < threshold) return null;
-      return delta > 0 ? 'consume' : 'release';
+      const threshold = Math.max(256, next.window * 0.0002);
+      if (delta >= threshold || growth >= threshold) return 'consume';
+      if (delta <= -threshold || shrink >= threshold) return 'release';
+      return null;
     }
 
     function buildMotionPlan(previous, next, kind) {
@@ -601,7 +610,7 @@ window.__ModuleLoader__.load({
       if (kind !== 'consume' && origins.length === 0) return null;
       return {
         kind,
-        duration: kind === 'compaction' ? 1400 : kind === 'release' ? 700 : 900,
+        duration: kind === 'compaction' ? 1400 : kind === 'release' ? 700 : 1100,
         targets,
         origins,
         previousFree: previous.freeRect,
@@ -697,12 +706,16 @@ window.__ModuleLoader__.load({
           if (plan.kind === 'consume') {
             const source = plan.previousFree ?? plan.free;
             const sourceY = source.y + source.height * 0.72;
-            plan.targets.forEach((target, index) => {
-              const delay = index * 55;
-              const progress = Math.max(0, Math.min(1, (elapsed - delay) / 650));
-              if (progress <= 0) return;
+            const particles = Math.min(10, Math.max(4, plan.targets.length * 4));
+            const lanes = Math.ceil(particles / plan.targets.length);
+            for (let index = 0; index < particles; index += 1) {
+              const target = plan.targets[index % plan.targets.length];
+              const lane = Math.floor(index / plan.targets.length);
+              const delay = index * 42;
+              const progress = Math.max(0, Math.min(1, (elapsed - delay) / 700));
+              if (progress <= 0) continue;
               const eased = 1 - Math.pow(1 - progress, 3);
-              const startX = source.x + source.width * ((index + 1) / (plan.targets.length + 1));
+              const startX = source.x + source.width * ((lane + 1) / (lanes + 1));
               const endX = target.rect.x + target.rect.width / 2;
               const endY = target.rect.y + target.rect.height / 2;
               const controlX = (startX + endX) / 2;
@@ -710,21 +723,21 @@ window.__ModuleLoader__.load({
               const inverse = 1 - eased;
               const x = inverse * inverse * startX + 2 * inverse * eased * controlX + eased * eased * endX;
               const y = inverse * inverse * sourceY + 2 * inverse * eased * controlY + eased * eased * endY;
-              drawGlow(target.color, x, y, 9, 0.55);
-              context.globalAlpha = 0.9;
+              drawGlow(target.color, x, y, 11, 0.62);
+              context.globalAlpha = 0.95;
               context.fillStyle = target.color;
               context.beginPath();
-              context.arc(x, y, 2.2, 0, Math.PI * 2);
+              context.arc(x, y, 2.6, 0, Math.PI * 2);
               context.fill();
               if (progress > 0.62) {
-                context.globalAlpha = (1 - progress) * 0.65;
+                context.globalAlpha = (1 - progress) * 0.7;
                 context.strokeStyle = target.color;
-                context.lineWidth = 1.5;
+                context.lineWidth = 1.6;
                 context.beginPath();
                 context.arc(endX, endY, 8 + (1 - progress) * 18, 0, Math.PI * 2);
                 context.stroke();
               }
-            });
+            }
           } else {
             const freeY = plan.free.y + plan.free.height * 0.42;
             plan.origins.slice(0, 8).forEach((origin, index) => {
@@ -736,9 +749,9 @@ window.__ModuleLoader__.load({
               const startY = origin.rect.y + origin.rect.height * 0.55;
               const x = startX + Math.sin(index * 1.7 + progress * 2.4) * 32 * progress;
               const y = startY + (freeY - startY) * eased;
-              drawGhost(origin.color, origin.rect, 0.16 * (1 - progress));
-              drawGlow(origin.color, x, y, 18 + progress * 48, 0.28 * (1 - progress));
-              drawGlow(origin.color, x + 24 * Math.sin(index), y + 10, 14 + progress * 32, 0.16 * (1 - progress));
+              drawGhost(origin.color, origin.rect, 0.26 * (1 - progress));
+              drawGlow(origin.color, x, y, 18 + progress * 48, 0.42 * (1 - progress));
+              drawGlow(origin.color, x + 24 * Math.sin(index), y + 10, 14 + progress * 32, 0.26 * (1 - progress));
             });
           }
           if (elapsed >= plan.duration) {
@@ -997,23 +1010,28 @@ window.__ModuleLoader__.load({
         const windowChanged = previous.window !== current.window;
         const compactionChanged =
           current.compactionSeq !== null && current.compactionSeq !== previous.compactionSeq;
-        if (!usedChanged && !windowChanged && !compactionChanged) return;
-        motionRef.current = current;
+        const categorySignatureChanged = JSON.stringify(previous.categories) !== JSON.stringify(current.categories);
+        if (!usedChanged && !windowChanged && !compactionChanged && !categorySignatureChanged) return;
         if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
           clearMotion();
+          motionRef.current = current;
           return;
         }
         const kind = classifyMotion(previous, current);
-        if (kind === null || kind === 'window') {
+        if (kind === 'window') {
           clearMotion();
+          motionRef.current = current;
           return;
         }
-        const plan = buildMotionPlan(previous, current, kind);
+        const plan = kind === null ? null : buildMotionPlan(previous, current, kind);
         if (plan === null) {
           clearMotion();
+          if (kind === 'compaction') motionRef.current = current;
           return;
         }
+        motionRef.current = current;
         plan.id = ++motionId.current;
+
         activePlanRef.current = plan;
         setMotionPlan(plan);
       }, [motionKey]);
