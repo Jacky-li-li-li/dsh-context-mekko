@@ -18,6 +18,9 @@ and inspect the exact content that was sent to the model.
 - Live: the tab refreshes on committed session events (debounced) while it is
   open; the header percentage follows the existing `contextPressure`
   projection continuously.
+- Performance: the 100-tile nested chart uses a lightweight tile mode. It
+  disables per-tile backdrop blur, pseudo highlights, and geometry transitions
+  so a dense drill-down does not composite 100 glass layers at once.
 - Hierarchical drill-down: category tile → semantic groups (Conversation:
   User/Assistant; tool results: tool name; system: prompt/instructions) →
   contribution treemap and searchable list → the rendered content, with token
