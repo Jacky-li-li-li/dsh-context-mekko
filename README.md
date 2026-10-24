@@ -10,9 +10,9 @@ and inspect the exact content that was sent to the model.
 - Header entry: `Context` pill with the provider-reported occupancy percentage.
 - Native tab: the chart lives in a normal right Sidebar tab, with the panel's
   own close, split, fullscreen, drag/dock, and layout persistence behavior.
-- Light mode: a backlit glass well with category-color bloom, fine engraved
-  grain, and rim-lit enamel tiles. The dense 100-tile drill-down stays in its
-  lightweight rendering mode.
+- Light mode: a backlit glass well with category-color bloom, soft inner
+  shading, and rim-lit enamel tiles. The dense 100-tile drill-down stays in
+  its lightweight rendering mode.
 - Liquid glass: translucent frosted blocks, refractive highlights, and smooth
   size transitions make the chart feel like a living glass mosaic.
 - Motion: overview only. Growth sends luminous protons from Free into the
