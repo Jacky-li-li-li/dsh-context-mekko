@@ -117,7 +117,7 @@ that path because an already-started session cannot switch Agent presets.
 
 ## Development
 
-The package is plain JavaScript; there is no build step.
+The package is plain JavaScript; there is no build step. `client.js` starts with a bundled three.js r128 (MIT) so the 3D Free tub works offline; the plugin code itself follows it inside the `window.__ModuleLoader__` factory.
 
 ```bash
 node --check index.js
