@@ -707,9 +707,9 @@ window.__ModuleLoader__.load({
       const layoutTotal = items.reduce((sum, item) => sum + item.tokens, 0);
       const totalWindow = layoutTotal + freeTokens;
       const usedShare = totalWindow > 0 ? Math.min(Math.max(layoutTotal / totalWindow, 0), 1) : 1;
-      const usedWidth = size.width * usedShare;
-      const freeWidth = Math.max(size.width - usedWidth, 0);
-      const rects = layoutTreemap(items, usedWidth, size.height);
+      const usedHeight = size.height * usedShare;
+      const freeHeight = Math.max(size.height - usedHeight, 0);
+      const rects = layoutTreemap(items, size.width, usedHeight);
       return h(
         'div',
         { ref: chartRef, className: 'cmk-chart' },
@@ -723,10 +723,10 @@ window.__ModuleLoader__.load({
             t,
           }),
         ),
-        freeTokens > 0 && freeWidth > 0
+        freeTokens > 0 && freeHeight > 0
           ? h(FreeTile, {
               key: 'free',
-              rect: { x: usedWidth, y: 0, width: freeWidth, height: size.height },
+              rect: { x: 0, y: usedHeight, width: size.width, height: freeHeight },
               tokens: freeTokens,
               windowTokens,
               t,
