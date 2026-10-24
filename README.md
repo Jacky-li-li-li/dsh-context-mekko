@@ -32,7 +32,7 @@ The chart follows the current retained model-visible surface, not the raw
 session history. **The whole chart area represents the full context window**:
 every category is one tile, laid out with a squarified treemap so tile area is
 proportional to its token share, and the neutral **Free** tile is the remaining
-space. Used area and Free follow provider-reported pressure when available
+space anchored to the right edge. Used area and Free follow provider-reported pressure when available
 (with category proportions taken from the estimated breakdown); otherwise they
 fall back to the estimated total. Larger tiles show their own label, token
 count, and percentage; smaller tiles keep their tooltip and legend entry.

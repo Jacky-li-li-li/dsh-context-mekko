@@ -577,25 +577,39 @@ window.__ModuleLoader__.load({
       const size = useElementSize(chartRef);
       const estimatedTotal = categories.reduce((sum, category) => sum + category.tokens, 0);
       if (estimatedTotal <= 0) return h('div', { className: 'cmk-empty' }, '—');
-      const items = categories
-        .map((category) => ({ key: category.key, tokens: category.tokens * layoutScale, category }))
-        .concat(freeTokens > 0 ? [{ key: 'free', tokens: freeTokens, free: true }] : []);
-      const rects = layoutTreemap(items, size.width, size.height);
+      const items = categories.map((category) => ({
+        key: category.key,
+        tokens: category.tokens * layoutScale,
+        category,
+      }));
+      const layoutTotal = items.reduce((sum, item) => sum + item.tokens, 0);
+      const totalWindow = layoutTotal + freeTokens;
+      const usedShare = totalWindow > 0 ? Math.min(Math.max(layoutTotal / totalWindow, 0), 1) : 1;
+      const usedWidth = size.width * usedShare;
+      const freeWidth = Math.max(size.width - usedWidth, 0);
+      const rects = layoutTreemap(items, usedWidth, size.height);
       return h(
         'div',
         { ref: chartRef, className: 'cmk-chart' },
         rects.map(({ item, ...rect }) =>
-          item.free
-            ? h(FreeTile, { key: item.key, rect, tokens: item.tokens, windowTokens, t })
-            : h(MekkoTile, {
-                key: item.key,
-                rect,
-                item,
-                share: estimatedTotal > 0 ? item.category.tokens / estimatedTotal : 0,
-                onSelectCategory,
-                t,
-              }),
+          h(MekkoTile, {
+            key: item.key,
+            rect,
+            item,
+            share: estimatedTotal > 0 ? item.category.tokens / estimatedTotal : 0,
+            onSelectCategory,
+            t,
+          }),
         ),
+        freeTokens > 0 && freeWidth > 0
+          ? h(FreeTile, {
+              key: 'free',
+              rect: { x: usedWidth, y: 0, width: freeWidth, height: size.height },
+              tokens: freeTokens,
+              windowTokens,
+              t,
+            })
+          : null,
       );
     }
 
