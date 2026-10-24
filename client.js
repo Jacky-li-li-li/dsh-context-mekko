@@ -593,17 +593,39 @@ window.__ModuleLoader__.load({
       );
     }
 
+    function skillNameFromText(text) {
+      const match = /<skill_content\b[^>]*\bname=["']([^"']+)["']/u.exec(String(text ?? ''));
+      return match?.[1];
+    }
+
+    function normalizeChild(category, child) {
+      if (category.key !== 'toolResults') return child;
+      const preview = String(child.preview ?? '');
+      if (child.group === 'skill' || preview.includes('<skill_content')) {
+        return {
+          ...child,
+          group: 'skill',
+          label: skillNameFromText(preview) ?? child.label.replace(/^Skill · /u, ''),
+        };
+      }
+      return child;
+    }
+
     function buildGroups(category) {
       const groups = new Map();
       for (const child of category.children) {
-        const key = typeof child.group === 'string' && child.group.length > 0 ? child.group : 'other';
+        const normalized = normalizeChild(category, child);
+        const key =
+          typeof normalized.group === 'string' && normalized.group.length > 0
+            ? normalized.group
+            : 'other';
         let group = groups.get(key);
         if (group === undefined) {
           group = { key, tokens: 0, children: [] };
           groups.set(key, group);
         }
-        group.tokens += child.tokens;
-        group.children.push(child);
+        group.tokens += normalized.tokens;
+        group.children.push(normalized);
       }
       return [...groups.values()]
         .map((group) => ({
@@ -841,7 +863,11 @@ window.__ModuleLoader__.load({
       const selectedGroup =
         selectedGroupKey === null ? undefined : groups.find((group) => group.key === selectedGroupKey);
       const showGroups = groups.length > 1 && selectedGroup === undefined;
-      const activeChildren = selectedGroup ? selectedGroup.children : category.children;
+      const activeChildren = selectedGroup
+        ? selectedGroup.children
+        : groups.length === 1
+          ? groups[0].children
+          : category.children;
       const total = selectedGroup ? selectedGroup.tokens : category.tokens;
       const color = CATEGORY_COLORS[category.key] ?? '#8a8f98';
 
@@ -1050,6 +1076,7 @@ window.__ModuleLoader__.load({
         );
       }
       const content = state.data;
+      const title = skillNameFromText(content.body) ?? content.title ?? blockId;
       return h(
         'div',
         null,
@@ -1069,7 +1096,7 @@ window.__ModuleLoader__.load({
           h(
             'div',
             { className: 'cmk-contentTitles' },
-            h('div', { className: 'cmk-contentTitle' }, content.title ?? blockId),
+            h('div', { className: 'cmk-contentTitle' }, title),
             h(
               'div',
               { className: 'cmk-contentSub' },

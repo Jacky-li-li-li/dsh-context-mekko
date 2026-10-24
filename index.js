@@ -608,9 +608,11 @@ export function buildContent(source, blockId) {
       message.role === "tool"
         ? findToolNameByCallId(surface, String(message.toolCallId ?? ""))
         : undefined;
+    const skillName = toolName === "skill" ? skillNameFromMessage(message) : undefined;
     let title;
-    if (message.role === "tool") title = toolName === undefined ? "Tool result" : `Tool result · ${toolName}`;
-    else if (message.role === "assistant") title = "Assistant message";
+    if (message.role === "tool") {
+      title = skillName ?? (toolName === undefined ? "Tool result" : `Tool result · ${toolName}`);
+    } else if (message.role === "assistant") title = "Assistant message";
     else if (message.role === "system") title = "System prompt";
     else if (sourceKind === "runtime-context") title = "Runtime context";
     else if (sourceKind === "time-context") title = "Time context";
