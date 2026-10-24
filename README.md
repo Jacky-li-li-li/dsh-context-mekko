@@ -15,8 +15,8 @@ and inspect the exact content that was sent to the model.
 - Live: the tab refreshes on committed session events (debounced) while it is
   open; the header percentage follows the existing `contextPressure`
   projection continuously.
-- Drill-down: category → contribution list → the rendered content, with token
-  estimates and source metadata.
+- Drill-down: category tile → contribution treemap and searchable list → the
+  rendered content, with token estimates and source metadata.
 
 Clicking the header tag opens or focuses the `Context` tab in the right
 Sidebar. Opening a category lists every contribution; opening one shows the

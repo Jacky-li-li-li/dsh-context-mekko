@@ -144,6 +144,7 @@ window.__ModuleLoader__.load({
 .cmk-panelBody{flex:1;min-height:0;overflow:auto;padding:12px 14px 22px}
 .cmk-chart{position:relative;isolation:isolate;display:block;height:300px;width:100%;padding:5px;border-radius:18px;overflow:hidden;background:linear-gradient(145deg,color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 36%,transparent),color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 12%,transparent)),rgba(128,128,128,.045);border:1px solid rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(0,0,0,.08),0 12px 30px rgba(0,0,0,.12);backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%)}
 .cmk-chart::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.12),transparent 28%,transparent 68%,rgba(255,255,255,.045))}
+.cmk-chartNested{height:260px;margin:0 0 14px}
 .cmk-tile{--cmk-tile-color:#8a8f98;container-type:size;position:absolute;z-index:1;padding:0;margin:0;border:1px solid color-mix(in srgb,var(--cmk-tile-color) 30%,rgba(255,255,255,.26));border-radius:12px;cursor:pointer;overflow:hidden;isolation:isolate;background:linear-gradient(135deg,color-mix(in srgb,var(--cmk-tile-color) 68%,rgba(255,255,255,.18)) 0%,color-mix(in srgb,var(--cmk-tile-color) 46%,transparent) 52%,color-mix(in srgb,var(--cmk-tile-color) 58%,transparent) 100%);backdrop-filter:blur(14px) saturate(170%);-webkit-backdrop-filter:blur(14px) saturate(170%);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(0,0,0,.10),0 3px 10px rgba(0,0,0,.10);transition:left .5s cubic-bezier(.22,1,.36,1),top .5s cubic-bezier(.22,1,.36,1),width .5s cubic-bezier(.22,1,.36,1),height .5s cubic-bezier(.22,1,.36,1),transform .18s ease,filter .18s ease,box-shadow .18s ease}
 .cmk-tile::before{content:"";position:absolute;inset:0;z-index:0;border-radius:inherit;pointer-events:none;background:linear-gradient(112deg,rgba(255,255,255,.38) 0%,rgba(255,255,255,.09) 22%,transparent 46%,rgba(255,255,255,.04) 72%,rgba(255,255,255,.14) 100%);opacity:.72;mix-blend-mode:screen}
 .cmk-tile::after{content:"";position:absolute;left:7%;right:16%;top:0;height:46%;border-radius:0 0 50% 50%;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.22),transparent);filter:blur(2px);opacity:.55}
@@ -569,6 +570,45 @@ window.__ModuleLoader__.load({
       );
     }
 
+    function ContributionTreemap({ category, children, total, onOpenBlock, t }) {
+      const chartRef = useRef(null);
+      const size = useElementSize(chartRef);
+      const color = CATEGORY_COLORS[category.key] ?? '#8a8f98';
+      const items = children.map((child, index) => ({
+        key: child.id,
+        child,
+        tokens: child.tokens,
+        color: shade(color, index),
+      }));
+      const rects = layoutTreemap(items, size.width, size.height);
+      return h(
+        'div',
+        { ref: chartRef, className: 'cmk-chart cmk-chartNested' },
+        rects.map(({ item, ...rect }) => {
+          const share = total > 0 ? item.child.tokens / total : 0;
+          const meta = `${formatTokens(item.child.tokens)} · ${formatPercent(share)}`;
+          return h(
+            'button',
+            {
+              key: item.key,
+              type: 'button',
+              className: 'cmk-tile',
+              style: { ...tileStyle(rect), '--cmk-tile-color': item.color },
+              title: `${item.child.label} · ${meta}`,
+              'aria-label': `${item.child.label}, ${meta}`,
+              onClick: () => onOpenBlock(item.child, category),
+            },
+            h(
+              'span',
+              { className: 'cmk-tileLabel' },
+              h('span', { className: 'cmk-tileLabelTitle' }, item.child.label),
+              h('span', { className: 'cmk-tileLabelMeta' }, meta),
+            ),
+          );
+        }),
+      );
+    }
+
     function Mekko({ categories, layoutScale = 1, freeTokens = 0, windowTokens = 0, onSelectCategory, t }) {
       const chartRef = useRef(null);
       const size = useElementSize(chartRef);
@@ -753,6 +793,13 @@ window.__ModuleLoader__.load({
           ),
           h('span', { className: 'cmk-swatch', style: { backgroundColor: CATEGORY_COLORS[category.key] } }),
         ),
+        h(ContributionTreemap, {
+          category,
+          children: category.children,
+          total,
+          onOpenBlock,
+          t,
+        }),
         category.children.length > 10
           ? h('input', {
               className: 'cmk-search',
