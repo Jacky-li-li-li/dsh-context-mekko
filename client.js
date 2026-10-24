@@ -324,6 +324,11 @@ function createTub3D(canvas, options){
   renderer.autoClear = false;
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  canvas.addEventListener('webglcontextlost', (event) => {
+    event.preventDefault();
+    stop();
+    canvas.style.opacity = '0';
+  }, false);
 
   let width = 420, height = 190, surfaceH = 30, freeShare = 0.6;
   let phase = 0.1, speed = 1, speedTarget = 1, nudgeTimer = 0;
@@ -431,13 +436,25 @@ function createTub3D(canvas, options){
     world = null;
   }
 
+  let bufferW = 0;
+  let bufferH = 0;
+
   function resize(w, h, s, share){
     width = Math.max(1, w);
     height = Math.max(1, h);
     surfaceH = Math.max(1, s);
     if (share !== undefined) freeShare = share;
     if (!world) return;
-    renderer.setSize(width, height, false);
+    // Resizing a WebGL canvas clears its buffer; only do it when the buffer size actually
+    // changes, and repaint immediately so a data refresh can never leave a blank frame.
+    const dpr = renderer.getPixelRatio();
+    const nextW = Math.max(1, Math.floor(width * dpr));
+    const nextH = Math.max(1, Math.floor(height * dpr));
+    if (nextW !== bufferW || nextH !== bufferH){
+      renderer.setSize(width, height, false);
+      bufferW = nextW;
+      bufferH = nextH;
+    }
     const camera = world.camera;
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
@@ -448,7 +465,7 @@ function createTub3D(canvas, options){
     world.waterMat.uniforms.uRes.value.set(width, height);
     world.waterMat.uniforms.uSurface.value = 1 - surfaceH / height;
     positionWhale(phase);
-    if (!running) renderOnce();
+    renderOnce();
   }
 
   function whalePath(){
@@ -743,7 +760,7 @@ return createTub3D;
 .cmk-tileLabelMeta{display:none;font-size:11px;line-height:15px;opacity:.78;font-variant-numeric:tabular-nums}
 @container (min-width:72px) and (min-height:30px){.cmk-tileLabel{display:flex}}
 @container (min-width:72px) and (min-height:48px){.cmk-tileLabelMeta{display:block}}
-.cmk-free{container-type:size;position:absolute;z-index:1;overflow:hidden;isolation:isolate;border:1px solid rgba(51,65,85,.28);border-radius:12px;background:linear-gradient(180deg,#d7e6e6 0%,#7fa9a6 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -12px 26px rgba(46,110,105,.18),0 10px 24px -20px rgba(15,23,42,.45);cursor:default;transition:left .5s cubic-bezier(.22,1,.36,1),top .5s cubic-bezier(.22,1,.36,1),width .5s cubic-bezier(.22,1,.36,1),height .5s cubic-bezier(.22,1,.36,1)}
+.cmk-free{container-type:size;position:absolute;z-index:1;overflow:hidden;isolation:isolate;transform:translateZ(0);border:1px solid rgba(51,65,85,.28);border-radius:12px;background:linear-gradient(180deg,#d7e6e6 0%,#7fa9a6 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -12px 26px rgba(46,110,105,.18),0 10px 24px -20px rgba(15,23,42,.45);cursor:default;transition:left .5s cubic-bezier(.22,1,.36,1),top .5s cubic-bezier(.22,1,.36,1),width .5s cubic-bezier(.22,1,.36,1),height .5s cubic-bezier(.22,1,.36,1)}
 .cmk-freeCanvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1;pointer-events:none}
 .cmk-freeLabel{position:absolute;left:12px;top:6px;right:12px;z-index:2;display:none;align-items:baseline;gap:6px;pointer-events:none;text-align:left;overflow:hidden}
 .cmk-freeTitle{font-size:13px;line-height:18px;font-weight:600;color:var(--dsw-alias-label-secondary,#555);white-space:nowrap}
@@ -1425,6 +1442,8 @@ body:not([data-ds-dark-theme]) .cmk-legendNum{color:#64748b}
       const holderRef = useRef(null);
       const canvasRef = useRef(null);
       const controllerRef = useRef(null);
+      const rectRef = useRef(rect);
+      rectRef.current = rect;
       const freeShareRef = useRef(freeShare);
       freeShareRef.current = freeShare;
       const percent = windowTokens > 0 ? formatPercent(tokens / windowTokens) : '';
@@ -1449,14 +1468,19 @@ body:not([data-ds-dark-theme]) .cmk-legendNum{color:#64748b}
           return undefined;
         }
         controllerRef.current = controller;
+        // Size the scene from the layout rect (the CSS transition animates the DOM box,
+        // the canvas stretches with it) instead of measuring every transition frame —
+        // this keeps us from reallocating the WebGL buffer 60x per update.
         const measure = () => {
-          const box = holder.getBoundingClientRect();
-          const height = Math.max(box.height, 1);
-          controller.resize(Math.max(box.width, 1), height, surfaceHeight(height), freeShareRef.current);
+          const current = rectRef.current;
+          controller.resize(
+            Math.max(current.width, 1),
+            Math.max(current.height, 1),
+            surfaceHeight(current.height),
+            freeShareRef.current,
+          );
         };
         measure();
-        const resizeObserver = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(measure);
-        resizeObserver?.observe(holder);
         const play = () => {
           if (!document.hidden && !reducedMotion()) controller.start();
         };
@@ -1481,7 +1505,6 @@ body:not([data-ds-dark-theme]) .cmk-legendNum{color:#64748b}
         if (reducedMotion()) controller.stop();
         else play();
         return () => {
-          resizeObserver?.disconnect();
           intersection?.disconnect();
           document.removeEventListener('visibilitychange', onVisibility);
           themeObserver.disconnect();
@@ -1492,11 +1515,9 @@ body:not([data-ds-dark-theme]) .cmk-legendNum{color:#64748b}
 
       useLayoutEffect(() => {
         const controller = controllerRef.current;
-        const holder = holderRef.current;
-        if (!controller || !holder) return;
-        const box = holder.getBoundingClientRect();
-        const height = Math.max(box.height, 1);
-        controller.resize(Math.max(box.width, 1), height, surfaceHeight(height), freeShare);
+        if (!controller) return;
+        const height = Math.max(rect.height, 1);
+        controller.resize(Math.max(rect.width, 1), height, surfaceHeight(height), freeShare);
       }, [rect.width, rect.height, freeShare]);
 
       useEffect(() => {
