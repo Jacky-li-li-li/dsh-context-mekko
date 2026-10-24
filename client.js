@@ -574,10 +574,8 @@ window.__ModuleLoader__.load({
         if (delta > 0) growth += delta;
         else shrink -= delta;
       }
-      const delta = next.used - previous.used;
-      const threshold = Math.max(256, next.window * 0.0002);
-      if (delta >= threshold || growth >= threshold) return 'consume';
-      if (delta <= -threshold || shrink >= threshold) return 'release';
+      if (growth > 0) return 'consume';
+      if (shrink > 0) return 'release';
       return null;
     }
 
@@ -706,7 +704,8 @@ window.__ModuleLoader__.load({
           if (plan.kind === 'consume') {
             const source = plan.previousFree ?? plan.free;
             const sourceY = source.y + source.height * 0.72;
-            const particles = Math.min(10, Math.max(4, plan.targets.length * 4));
+            const totalDelta = plan.targets.reduce((sum, target) => sum + target.delta, 0);
+            const particles = Math.min(10, Math.max(3, Math.round(totalDelta / 2048)));
             const lanes = Math.ceil(particles / plan.targets.length);
             for (let index = 0; index < particles; index += 1) {
               const target = plan.targets[index % plan.targets.length];
