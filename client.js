@@ -460,10 +460,14 @@ window.__ModuleLoader__.load({
     }
 
     function Legend({ categories, total, onSelectCategory, t }) {
+      const sortedCategories = [...categories].sort(
+        (left, right) =>
+          right.tokens - left.tokens || CATEGORY_ORDER.indexOf(left.key) - CATEGORY_ORDER.indexOf(right.key),
+      );
       return h(
         'div',
         { className: 'cmk-legend' },
-        categories.map((category) => {
+        sortedCategories.map((category) => {
           const color = CATEGORY_COLORS[category.key] ?? '#8a8f98';
           return h(
             'button',
