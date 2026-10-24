@@ -24,7 +24,6 @@ window.__ModuleLoader__.load({
       copy: '复制',
       copied: '已复制',
       empty: '当前还没有模型可见的上下文。',
-      approx: '整图面积为上下文窗口；分类块百分比为占已用构成，Free 按窗口计算。',
       used: '已用',
       of: '/',
       tokens: 'tokens',
@@ -73,7 +72,6 @@ window.__ModuleLoader__.load({
       copy: 'Copy',
       copied: 'Copied',
       empty: 'No model-visible context yet.',
-      approx: 'Chart area is the context window; tile percentages use the used composition, while Free uses the window.',
       used: 'used',
       of: 'of',
       tokens: 'tokens',
@@ -144,7 +142,6 @@ window.__ModuleLoader__.load({
 .cmk-headSide{flex:none;display:flex;align-items:center;gap:8px;padding-top:1px}
 .cmk-ring{flex:none;display:inline-flex;align-items:center;justify-content:center}
 .cmk-panelBody{flex:1;min-height:0;overflow:auto;padding:12px 14px 22px}
-.cmk-foot{flex:none;padding:9px 16px 11px;border-top:1px solid var(--dsw-alias-border-l3,rgba(128,128,128,.16));color:var(--dsw-alias-label-tertiary,#888);font-size:11px;line-height:16px}
 .cmk-chart{position:relative;isolation:isolate;display:block;height:300px;width:100%;padding:5px;border-radius:18px;overflow:hidden;background:linear-gradient(145deg,color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 36%,transparent),color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 12%,transparent)),rgba(128,128,128,.045);border:1px solid rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(0,0,0,.08),0 12px 30px rgba(0,0,0,.12);backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%)}
 .cmk-chart::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.12),transparent 28%,transparent 68%,rgba(255,255,255,.045))}
 .cmk-tile{--cmk-tile-color:#8a8f98;container-type:size;position:absolute;z-index:1;padding:0;margin:0;border:1px solid color-mix(in srgb,var(--cmk-tile-color) 30%,rgba(255,255,255,.26));border-radius:12px;cursor:pointer;overflow:hidden;isolation:isolate;background:linear-gradient(135deg,color-mix(in srgb,var(--cmk-tile-color) 68%,rgba(255,255,255,.18)) 0%,color-mix(in srgb,var(--cmk-tile-color) 46%,transparent) 52%,color-mix(in srgb,var(--cmk-tile-color) 58%,transparent) 100%);backdrop-filter:blur(14px) saturate(170%);-webkit-backdrop-filter:blur(14px) saturate(170%);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(0,0,0,.10),0 3px 10px rgba(0,0,0,.10);transition:left .5s cubic-bezier(.22,1,.36,1),top .5s cubic-bezier(.22,1,.36,1),width .5s cubic-bezier(.22,1,.36,1),height .5s cubic-bezier(.22,1,.36,1),transform .18s ease,filter .18s ease,box-shadow .18s ease}
@@ -1013,7 +1010,6 @@ window.__ModuleLoader__.load({
           ),
         ),
         h('div', { className: 'cmk-panelBody' }, content),
-        h('div', { className: 'cmk-foot' }, translate(t, 'approx')),
       );
     }
 

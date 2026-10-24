@@ -15,7 +15,6 @@
   "copy": "Copy",
   "copied": "Copied",
   "empty": "No model-visible context yet.",
-  "approx": "Chart area is the context window; tile percentages use the used composition, while Free uses the window.",
   "used": "used",
   "of": "of",
   "tokens": "tokens",
