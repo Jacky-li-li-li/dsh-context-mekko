@@ -53,5 +53,5 @@
     "noContent": "This contribution has no rendered content."
   },
   "topContributors": "Largest contributions",
-  "showMore": "Show more"
+  "listTruncated": "Showing the first {count}; search covers all"
 }

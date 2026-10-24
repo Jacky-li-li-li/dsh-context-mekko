@@ -53,5 +53,5 @@
     "noContent": "该部分没有可渲染内容。"
   },
   "topContributors": "占用排行",
-  "showMore": "显示更多"
+  "listTruncated": "仅显示前 {count} 项；搜索可查找全部"
 }

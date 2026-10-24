@@ -33,7 +33,7 @@ window.__ModuleLoader__.load({
       free: 'Free',
       topContributors: '占用排行',
       items: '{count} 项',
-      showMore: '显示更多',
+      listTruncated: '仅显示前 {count} 项；搜索可查找全部',
       loadContentFailed: '内容加载失败。',
       category: {
         system: '系统与指令',
@@ -91,7 +91,7 @@ window.__ModuleLoader__.load({
       free: 'Free',
       topContributors: 'Largest contributions',
       items: '{count} items',
-      showMore: 'Show more',
+      listTruncated: 'Showing the first {count}; search covers all',
       loadContentFailed: 'Could not load this contribution.',
       category: {
         system: 'System & instructions',
@@ -171,7 +171,6 @@ window.__ModuleLoader__.load({
 .cmk-tile:hover{filter:brightness(1.10) saturate(1.12);transform:translateY(-1px);outline:1px solid rgba(255,255,255,.38);outline-offset:-1px;z-index:2;box-shadow:inset 0 1px 0 rgba(255,255,255,.40),inset 0 -1px 0 rgba(0,0,0,.10),0 6px 16px color-mix(in srgb,var(--cmk-tile-color) 24%,rgba(0,0,0,.16))}
 .cmk-tile:active{transform:translateY(0) scale(.995)}
 .cmk-tile:focus-visible{outline:2px solid var(--dsw-focus-ring-color,#4c8bf5);outline-offset:-2px;z-index:3}
-.cmk-tileOther{opacity:.72;cursor:default;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.14) 0 5px,transparent 5px 11px),linear-gradient(135deg,color-mix(in srgb,var(--cmk-tile-color) 36%,rgba(255,255,255,.12)) 0%,color-mix(in srgb,var(--cmk-tile-color) 24%,transparent) 100%)}
 .cmk-tileLabel{position:absolute;inset:6px 7px;z-index:2;display:none;flex-direction:column;align-items:flex-start;gap:2px;pointer-events:none;text-align:left;color:var(--dsw-alias-label-primary,#111);font:inherit}
 .cmk-tileLabelTitle{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;line-height:16px;font-weight:600}
 .cmk-tileLabelMeta{display:none;font-size:11px;line-height:15px;opacity:.78;font-variant-numeric:tabular-nums}
@@ -193,6 +192,7 @@ window.__ModuleLoader__.load({
 .cmk-legendNum{flex:none;color:var(--dsw-alias-label-tertiary,#888);font-variant-numeric:tabular-nums;font-size:12px}
 .cmk-totals{display:flex;align-items:baseline;gap:6px;margin-top:12px;color:var(--dsw-alias-label-tertiary,#888);font-size:12px}
 .cmk-sectionTitle{margin:16px 0 4px;color:var(--dsw-alias-label-secondary,#555);font-size:12px;font-weight:600;line-height:18px}
+.cmk-listNote{margin-top:8px;color:var(--dsw-alias-label-tertiary,#888);font-size:11px;line-height:16px;text-align:center}
 .cmk-totals b{color:var(--dsw-alias-label-secondary,#555);font-weight:600;font-variant-numeric:tabular-nums}
 .cmk-backRow{display:flex;align-items:center;gap:8px;margin:0 0 12px}
 .cmk-back{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 8px;border:1px solid var(--dsw-alias-border-l3,rgba(128,128,128,.2));border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary,#555);font:inherit;font-size:12px;cursor:pointer}
@@ -667,28 +667,22 @@ window.__ModuleLoader__.load({
         'div',
         { ref: chartRef, className: 'cmk-chart cmk-chartNested' },
         rects.map(({ item, ...rect }) => {
-          const other = item.other === true;
-          const label = other ? translate(t, 'other') : item.label;
-          const meta = other
-            ? `${formatTokens(item.tokens)} · ${translate(t, 'detail.other', { count: item.count })}`
-            : `${formatTokens(item.tokens)} · ${formatPercent(total > 0 ? item.tokens / total : 0)}`;
+          const meta = `${formatTokens(item.tokens)} · ${formatPercent(total > 0 ? item.tokens / total : 0)}`;
           return h(
             'button',
             {
               key: item.key,
               type: 'button',
-              className: other ? 'cmk-tile cmk-tileOther' : 'cmk-tile',
+              className: 'cmk-tile',
               style: { ...tileStyle(rect), '--cmk-tile-color': item.color },
-              title: `${label} · ${meta}`,
-              'aria-label': `${label}, ${meta}`,
-              'aria-disabled': other ? true : undefined,
-              tabIndex: other ? -1 : undefined,
-              onClick: other ? undefined : () => onSelect(item),
+              title: `${item.label} · ${meta}`,
+              'aria-label': `${item.label}, ${meta}`,
+              onClick: () => onSelect(item),
             },
             h(
               'span',
               { className: 'cmk-tileLabel' },
-              h('span', { className: 'cmk-tileLabelTitle' }, label),
+              h('span', { className: 'cmk-tileLabelTitle' }, item.label),
               h('span', { className: 'cmk-tileLabelMeta' }, meta),
             ),
           );
@@ -850,7 +844,6 @@ window.__ModuleLoader__.load({
     function CategoryDetail({ category, data, usedTokens, contextWindow, onBack, onOpenBlock, t }) {
       const [query, setQuery] = useState('');
       const [selectedGroupKey, setSelectedGroupKey] = useState(null);
-      const [listLimit, setListLimit] = useState(MAX_LIST_ROWS);
       const windowTokens =
         Number.isFinite(contextWindow) && contextWindow > 0
           ? contextWindow
@@ -896,11 +889,7 @@ window.__ModuleLoader__.load({
       useEffect(() => {
         setSelectedGroupKey(null);
         setQuery('');
-        setListLimit(MAX_LIST_ROWS);
       }, [category.key]);
-      useEffect(() => {
-        setListLimit(MAX_LIST_ROWS);
-      }, [selectedGroupKey, query]);
       useEffect(() => {
         if (selectedGroupKey !== null && !displayGroups.some((group) => group.key === selectedGroupKey)) {
           setSelectedGroupKey(null);
@@ -922,7 +911,7 @@ window.__ModuleLoader__.load({
         color: shade(color, index),
         child,
       }));
-      const visibleChildren = children.slice(0, listLimit);
+      const visibleChildren = children.slice(0, MAX_LIST_ROWS);
 
       return h(
         'div',
@@ -966,7 +955,7 @@ window.__ModuleLoader__.load({
           ? h(
               'div',
               { className: 'cmk-list' },
-              groupItems.map((item) =>
+              groupItems.slice(0, MAX_TILES).map((item) =>
                 h(
                   'button',
                   {
@@ -1044,15 +1033,11 @@ window.__ModuleLoader__.load({
                   );
                 }),
               ),
-              children.length > listLimit
+              children.length > MAX_LIST_ROWS
                 ? h(
-                    'button',
-                    {
-                      type: 'button',
-                      className: 'cmk-retry',
-                      onClick: () => setListLimit((value) => value + MAX_LIST_ROWS),
-                    },
-                    translate(t, 'showMore'),
+                    'div',
+                    { className: 'cmk-listNote' },
+                    translate(t, 'listTruncated', { count: MAX_LIST_ROWS }),
                   )
                 : null,
             ),

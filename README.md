@@ -131,17 +131,17 @@ with React from the host module table.
 - Long sessions are recomputed on demand when the tab is active; the plugin
   does not keep a background projection.
 - Rendering is bounded: a nested treemap draws at most 200 individual tiles
-  and omits the rest from the chart; the detail list still contains every item
-  and renders 200 rows at a time behind "Show more". Content is still fetched
-  only when a contribution is opened, so large sessions do not accumulate
-  content strings or timers in the client.
+  and omits the rest from the chart; the detail list shows at most 200 rows,
+  while search still covers every item. Content is still fetched only when a
+  contribution is opened, so large sessions do not accumulate content strings
+  or timers in the client.
 
 ## Performance guard
 
 The chart and list are intentionally bounded for long sessions:
 
 - `MAX_TILES = 200`: inputs above 200 draw only the 200 largest individual tiles.
-- `MAX_LIST_ROWS = 200`: the list grows only when the user asks for more.
+- `MAX_LIST_ROWS = 200`: the list shows the first 200 rows; search covers all.
 - Content bodies are fetched lazily and are not cached by the browser plugin.
 
 A local Node benchmark of the extracted layout function gave the following:
