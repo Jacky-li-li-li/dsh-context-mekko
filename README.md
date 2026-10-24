@@ -131,8 +131,8 @@ with React from the host module table.
 - Long sessions are recomputed on demand when the tab is active; the plugin
   does not keep a background projection.
 - Rendering is bounded: a nested treemap draws at most 100 individual tiles
-  and omits the rest from the chart, with a small info icon just above the
-  chart's top-right edge when items are hidden; the detail list shows at most
+  and omits the rest from the chart, with a small info icon on the right end of
+  the detail heading row when items are hidden; the detail list shows at most
   100 rows, while search still covers every item. Content is still fetched only when a
   contribution is opened, so large sessions do not accumulate content strings
   or timers in the client.
