@@ -371,6 +371,24 @@ function findToolNameByCallId(surface, callId) {
 }
 
 /**
+ * Split a merged workspace-instructions injection into one section per
+ * `Instructions from: <path>` header. The body remains model-facing text.
+ * @param {string} text
+ */
+function splitInstructionFiles(text) {
+  const source = String(text ?? '');
+  const matches = [...source.matchAll(/^\s*Instructions from:\s*(.+?)\s*$/gmu)];
+  if (matches.length === 0) return [{ label: 'Workspace instructions', body: source.trim() }];
+  return matches.map((match, index) => {
+    const next = matches[index + 1];
+    const body = source.slice(match.index + match[0].length, next?.index ?? source.length)
+      .replace(/<\/system-reminder>\s*$/u, '')
+      .trim();
+    return { label: match[1].trim(), body };
+  });
+}
+
+/**
  * Human-readable label for one leaf, before localization.
  * @param {ReturnType<typeof classify>} classification
  * @param {Record<string, unknown>} event
@@ -470,6 +488,30 @@ export function buildBreakdown(source) {
       }
       category.tokens += tokens;
       continue;
+    }
+
+    if (classification.kind === "instructions") {
+      const files = splitInstructionFiles(messageText(message));
+      if (files.length > 1) {
+        const prices = allocate(
+          files.map((file) => file.body.length),
+          tokens,
+        );
+        files.forEach((file, index) => {
+          category.children.push({
+            id: `instr:${String(seq)}:${String(index)}`,
+            label: file.label,
+            tokens: prices[index] ?? 0,
+            kind: "text",
+            preview: excerpt(file.body, 96),
+            contentId: `instr:${String(seq)}:${String(index)}`,
+            group: "instructions",
+            seq,
+          });
+        });
+        category.tokens += tokens;
+        continue;
+      }
     }
 
     if (classification.kind === "catalog") {
@@ -665,6 +707,31 @@ export function buildContent(source, blockId) {
         seq: event.seq,
         tokens,
         sourceKind: messageSourceKind(message) ?? null,
+      },
+    };
+  }
+
+  if (prefix === "instr") {
+    const [seqText, indexText] = rest.split(":");
+    const seq = Number(seqText);
+    const index = Number(indexText);
+    const found = surface.find((entry) => Number(entry.event.seq) === seq);
+    if (found === undefined) return undefined;
+    const files = splitInstructionFiles(messageText(found.message));
+    const file = files[index];
+    if (file === undefined) return undefined;
+    return {
+      id: blockId,
+      title: file.label,
+      subtitle: `user/message · seq ${String(seq)} · workspace instructions`,
+      kind: "text",
+      body: file.body,
+      meta: {
+        role: "user",
+        eventType: "user/message",
+        seq,
+        tokens: estimateMessage(found.message),
+        sourceKind: "agent-instructions",
       },
     };
   }
