@@ -970,7 +970,6 @@ window.__ModuleLoader__.load({
                   )}`,
             ),
           ),
-          h('span', { className: 'cmk-swatch', style: { backgroundColor: color } }),
         ),
         h(NestedTreemap, {
           items: showGroups ? groupItems : childItems,
