@@ -1,6 +1,6 @@
 {
   "name": "dsh-context-mekko",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "Live Marimekko view of the model-visible context window, with click-through inspection of every contribution.",
   "type": "module",
   "license": "MIT",

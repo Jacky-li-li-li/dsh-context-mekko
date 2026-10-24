@@ -15,11 +15,12 @@
   "copy": "复制",
   "copied": "已复制",
   "empty": "当前还没有模型可见的上下文。",
-  "approx": "构成按 Harness 的 token 启发式估算；占用按 Provider 报告。",
+  "approx": "整图面积为上下文窗口；分类为估算构成，Free 优先按 Provider 占用计算。",
   "used": "已用",
   "of": "/",
   "tokens": "tokens",
   "estimated": "估算",
+  "free": "空闲",
   "category": {
     "system": "系统与指令",
     "tools": "工具定义",

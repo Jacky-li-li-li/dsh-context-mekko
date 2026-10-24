@@ -15,11 +15,12 @@
   "copy": "Copy",
   "copied": "Copied",
   "empty": "No model-visible context yet.",
-  "approx": "Composition uses the harness token heuristic; occupancy uses provider-reported pressure.",
+  "approx": "Chart area is the context window; categories are estimated, and Free follows provider pressure when available.",
   "used": "used",
   "of": "of",
   "tokens": "tokens",
   "estimated": "estimated",
+  "free": "Free",
   "category": {
     "system": "System & instructions",
     "tools": "Tool definitions",

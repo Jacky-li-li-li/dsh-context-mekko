@@ -29,7 +29,14 @@ exact message, tool output, tool schema, runtime section, or skill entry:
 ## What is in the chart
 
 The chart follows the current retained model-visible surface, not the raw
-session history. Categories:
+session history. **The whole chart area represents the full context window**:
+each column is a category, blocks inside a column are individual contributions,
+and the neutral **Free** block is the remaining space. Used area and Free follow
+provider-reported pressure when available (with category proportions taken from
+the estimated breakdown); otherwise they fall back to the estimated total.
+Larger blocks show their own labels and token counts.
+
+Categories:
 
 | Category | Contents |
 |---|---|
