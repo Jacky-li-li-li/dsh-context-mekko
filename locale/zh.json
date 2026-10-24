@@ -43,5 +43,5 @@
     "truncated": "内容过长，已截断显示。",
     "noContent": "该部分没有可渲染内容。"
   },
-  "topContributors": "占用最多的部分"
+  "topContributors": "占用排行"
 }

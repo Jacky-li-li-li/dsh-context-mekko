@@ -31,7 +31,7 @@ window.__ModuleLoader__.load({
       estimated: '估算',
       search: '搜索这个分类…',
       other: '其他',
-      topContributors: '占用最多的部分',
+      topContributors: '占用排行',
       items: '{count} 项',
       loadContentFailed: '内容加载失败。',
       category: {
