@@ -654,21 +654,7 @@ window.__ModuleLoader__.load({
     }
 
     function limitTreemapItems(items) {
-      const sorted = [...items].sort((left, right) => right.tokens - left.tokens);
-      if (sorted.length <= MAX_TILES) return sorted;
-      const head = sorted.slice(0, MAX_TILES - 1);
-      const rest = sorted.slice(MAX_TILES - 1);
-      return [
-        ...head,
-        {
-          key: '__other__',
-          label: 'other',
-          tokens: rest.reduce((sum, item) => sum + item.tokens, 0),
-          count: rest.length,
-          other: true,
-          color: '#8a8f98',
-        },
-      ];
+      return [...items].sort((left, right) => right.tokens - left.tokens).slice(0, MAX_TILES);
     }
 
     function NestedTreemap({ items, onSelect, t }) {
