@@ -639,6 +639,13 @@ window.__ModuleLoader__.load({
         .sort((left, right) => right.tokens - left.tokens);
     }
 
+    function leafLabelWithoutGroup(label, groupKey) {
+      if (groupKey === 'assistant') return label.replace(/^Assistant\s*·\s*/u, '');
+      if (groupKey === 'user') return label.replace(/^User\s+/u, '');
+      if (groupKey === 'system') return label.replace(/^System\s+/u, '');
+      return label;
+    }
+
     function groupLabel(t, key) {
       const known = new Set([
         'user',
@@ -870,11 +877,12 @@ window.__ModuleLoader__.load({
       const selectedGroup =
         selectedGroupKey === null ? undefined : displayGroups.find((group) => group.key === selectedGroupKey);
       const showGroups = displayGroups.length > 1 && selectedGroup === undefined;
-      const activeChildren = selectedGroup
-        ? selectedGroup.children
-        : displayGroups.length === 1
-          ? displayGroups[0].children
-          : displayGroups.flatMap((group) => group.children);
+      const leafGroup =
+        selectedGroup ?? (displayGroups.length === 1 ? displayGroups[0] : undefined);
+      const activeChildren = leafGroup
+        ? leafGroup.children
+        : displayGroups.flatMap((group) => group.children);
+      const childLabel = (child) => leafLabelWithoutGroup(child.label, leafGroup?.key);
       const displayCategoryTokens = category.tokens * displayScale;
       const total = selectedGroup ? selectedGroup.tokens : displayCategoryTokens;
       const color = CATEGORY_COLORS[category.key] ?? '#8a8f98';
@@ -910,7 +918,7 @@ window.__ModuleLoader__.load({
       }));
       const childItems = children.map((child, index) => ({
         key: child.id,
-        label: child.label,
+        label: childLabel(child),
         tokens: child.tokens,
         color: shade(color, index),
         child,
@@ -1033,7 +1041,7 @@ window.__ModuleLoader__.load({
                     h(
                       'span',
                       { className: 'cmk-rowText' },
-                      h('span', { className: 'cmk-rowLabel' }, child.label),
+                      h('span', { className: 'cmk-rowLabel' }, childLabel(child)),
                       child.preview ? h('span', { className: 'cmk-rowPreview' }, child.preview) : null,
                     ),
                     h(
