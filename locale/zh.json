@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "title": "Context Mekko",
+    "description": "用实时 Marimekko 图拆解模型可见的上下文窗口；点击任意方块查看真正发送给模型的内容。"
+  },
+  "tag": "Context",
+  "tagTitle": "查看当前上下文构成",
+  "title": "上下文构成",
+  "subtitle": "下一次请求实际会看到的内容",
+  "close": "关闭上下文检查器",
+  "loading": "正在计算上下文…",
+  "loadFailed": "上下文构成加载失败。",
+  "retry": "重试",
+  "back": "返回",
+  "copy": "复制",
+  "copied": "已复制",
+  "empty": "当前还没有模型可见的上下文。",
+  "approx": "构成按 Harness 的 token 启发式估算；占用按 Provider 报告。",
+  "used": "已用",
+  "of": "/",
+  "tokens": "tokens",
+  "estimated": "估算",
+  "category": {
+    "system": "系统与指令",
+    "tools": "工具定义",
+    "skills": "技能目录",
+    "runtime": "运行环境",
+    "conversation": "对话历史",
+    "toolResults": "工具结果",
+    "injected": "注入与其他"
+  },
+  "group": {
+    "user": "用户",
+    "assistant": "助手",
+    "tool": "工具",
+    "system": "系统",
+    "context": "上下文"
+  },
+  "detail": {
+    "title": "上下文内容",
+    "source": "来源",
+    "seq": "会话事件",
+    "truncated": "内容过长，已截断显示。",
+    "noContent": "该部分没有可渲染内容。"
+  },
+  "topContributors": "占用最多的部分"
+}

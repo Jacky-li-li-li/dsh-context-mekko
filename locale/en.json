@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "title": "Context Mekko",
+    "description": "A live Marimekko breakdown of the model-visible context window; click any block to inspect the exact content that was sent."
+  },
+  "tag": "Context",
+  "tagTitle": "Inspect the current context window",
+  "title": "Context",
+  "subtitle": "What the next request will see",
+  "close": "Close context inspector",
+  "loading": "Measuring context…",
+  "loadFailed": "Could not load the context breakdown.",
+  "retry": "Retry",
+  "back": "Back",
+  "copy": "Copy",
+  "copied": "Copied",
+  "empty": "No model-visible context yet.",
+  "approx": "Composition uses the harness token heuristic; occupancy uses provider-reported pressure.",
+  "used": "used",
+  "of": "of",
+  "tokens": "tokens",
+  "estimated": "estimated",
+  "category": {
+    "system": "System & instructions",
+    "tools": "Tool definitions",
+    "skills": "Skill catalog",
+    "runtime": "Runtime & environment",
+    "conversation": "Conversation",
+    "toolResults": "Tool results",
+    "injected": "Injected & other"
+  },
+  "group": {
+    "user": "User",
+    "assistant": "Assistant",
+    "tool": "Tool",
+    "system": "System",
+    "context": "Context"
+  },
+  "detail": {
+    "title": "Context contribution",
+    "source": "Source",
+    "seq": "Session event",
+    "truncated": "Content was truncated for display.",
+    "noContent": "This contribution has no rendered content."
+  },
+  "topContributors": "Largest contributions"
+}

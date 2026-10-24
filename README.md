@@ -1,0 +1,109 @@
+# Context Mekko
+
+![Context Mekko drawer](assets/context-mekko.png)
+
+A DSH plugin that adds a **Context** tag to the conversation header and opens a
+live **Marimekko** breakdown of the model-visible context window. Click any
+block to inspect the exact content that was sent to the model.
+
+- Header entry: `Context` pill with the provider-reported occupancy percentage.
+- Right drawer: it overlays the right side of the conversation without
+  resizing or reflowing the chat.
+- Live: the drawer refreshes on committed session events (debounced) while it
+  is open; the header percentage follows the existing `contextPressure`
+  projection continuously.
+- Drill-down: category → contribution list → the rendered content, with token
+  estimates and source metadata.
+
+Opening a category lists every contribution; opening one shows the exact
+message, tool output, tool schema, runtime section, or skill entry:
+
+![Category drill-down](assets/context-mekko-detail.png)
+- Zero model impact: the plugin adds no model-visible content, writes no
+  session events, and makes no model calls.
+
+## What is in the chart
+
+The chart follows the current retained model-visible surface, not the raw
+session history. Categories:
+
+| Category | Contents |
+|---|---|
+| System & instructions | Rendered system prompt, workspace instructions, developer tool context |
+| Tool definitions | The tool schemas in the latest `request/header` |
+| Skill catalog | The skill-catalog context message and its entries |
+| Runtime & environment | Runtime-context and time-context sections (cwd, sandbox, approval, team, harness, web surface) |
+| Conversation | User and assistant messages on the surface |
+| Tool results | `tool/result` nodes, grouped by tool name |
+| Injected & other | Team/agent messages, goal/plan/reminder injections, job notices, compaction products, future source kinds |
+
+Token counts reuse the same fixed heuristic as
+`@deepseek-ai/dsh-token-meter` (four characters per token plus structural
+overhead), so the composition agrees with the harness's existing
+`contextBreakdown`. Occupancy in the header uses the provider-reported
+`contextPressure` instead; the two figures are deliberately labeled differently.
+
+## Install
+
+DSH must be in **Creator** mode (or a profile with `plugin_manager` enabled).
+From the web UI open **Plugins → Add plugin** and ask the agent to install this
+repository, or use the `plugin_manager` tool directly:
+
+```text
+plugin_manager(action: "install_bundle", target: "github:Jacky-li-li-li/dsh-context-mekko")
+```
+
+The Web **Plugins → Add plugin** dialog accepts the same repository URL
+(`https://github.com/Jacky-li-li-li/dsh-context-mekko`).
+
+For a local checkout, link the package directory instead:
+
+```text
+plugin_manager(action: "install_bundle", target: "/absolute/path/to/context-mekko")
+```
+
+Then reload the conversation page if the header entry is not visible yet.
+
+### Development install
+
+A checkout can be linked directly into a profile:
+
+```bash
+dsh plugin --profile <profile> add "link:/absolute/path/to/dsh-context-mekko"
+```
+
+`dsh plugin add` also adds the bundle to `dsh.profile.bundles`; HMR picks the
+change up in a live profile. The workspace where this plugin was developed used
+that path because an already-started session cannot switch Agent presets.
+
+## Development
+
+The package is plain JavaScript; there is no build step.
+
+```bash
+node --check index.js
+node --check client.js
+```
+
+`index.js` is the Host half: it registers two authenticated GET routes under
+`/api/context-mekko`. `client.js` is the browser half: it registers into
+`conversation.session.header.utilities` and renders the drawer with React from
+the host module table.
+
+## Limitations
+
+- Token figures are estimates. The fixed heuristic underprices CJK text and
+  JSON schemas; the header occupancy percentage is provider-reported and may
+  differ from the composition total.
+- The system prompt is stored in the log as one rendered text node, so this
+  version cannot split it into its internal sections.
+- The skill catalog carries skill names and descriptions only; full `SKILL.md`
+  bodies are not part of the context and are not shown.
+- Long sessions are recomputed on demand when the drawer opens; the plugin does
+  not keep a background projection.
+- The drawer shows the current session only. Sub-session aggregation is future
+  work.
+
+## License
+
+MIT
