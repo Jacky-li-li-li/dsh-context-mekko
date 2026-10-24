@@ -34,6 +34,7 @@ window.__ModuleLoader__.load({
       topContributors: '占用排行',
       items: '{count} 项',
       listTruncated: '仅显示前 {count} 项；搜索可查找全部',
+      tileLimitHint: '最多展示 {count} 个，其余请在下方搜索查看',
       loadContentFailed: '内容加载失败。',
       category: {
         system: '系统与指令',
@@ -92,6 +93,7 @@ window.__ModuleLoader__.load({
       topContributors: 'Largest contributions',
       items: '{count} items',
       listTruncated: 'Showing the first {count}; search covers all',
+      tileLimitHint: 'Showing at most {count}; search below for the rest',
       loadContentFailed: 'Could not load this contribution.',
       category: {
         system: 'System & instructions',
@@ -165,6 +167,8 @@ window.__ModuleLoader__.load({
 .cmk-chart{position:relative;isolation:isolate;display:block;height:300px;width:100%;padding:5px;border-radius:18px;overflow:hidden;background:linear-gradient(145deg,color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 36%,transparent),color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 12%,transparent)),rgba(128,128,128,.045);border:1px solid rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(0,0,0,.08),0 12px 30px rgba(0,0,0,.12);backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%)}
 .cmk-chart::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.12),transparent 28%,transparent 68%,rgba(255,255,255,.045))}
 .cmk-chartNested{height:260px;margin:0 0 14px}
+.cmk-info{position:absolute;top:10px;right:12px;z-index:5;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid rgba(255,255,255,.22);border-radius:50%;background:color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 42%,transparent);backdrop-filter:blur(12px) saturate(150%);-webkit-backdrop-filter:blur(12px) saturate(150%);color:var(--dsw-alias-label-secondary,#555);font-family:inherit;font-size:11px;font-weight:600;line-height:1;cursor:help;box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
+.cmk-info:hover,.cmk-info:focus-visible{color:var(--dsw-alias-label-primary,#111);border-color:rgba(255,255,255,.36);outline:none}
 .cmk-tile{--cmk-tile-color:#8a8f98;container-type:size;position:absolute;z-index:1;padding:0;margin:0;border:1px solid color-mix(in srgb,var(--cmk-tile-color) 30%,rgba(255,255,255,.26));border-radius:12px;cursor:pointer;overflow:hidden;isolation:isolate;background:linear-gradient(135deg,color-mix(in srgb,var(--cmk-tile-color) 68%,rgba(255,255,255,.18)) 0%,color-mix(in srgb,var(--cmk-tile-color) 46%,transparent) 52%,color-mix(in srgb,var(--cmk-tile-color) 58%,transparent) 100%);backdrop-filter:blur(14px) saturate(170%);-webkit-backdrop-filter:blur(14px) saturate(170%);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(0,0,0,.10),0 3px 10px rgba(0,0,0,.10);transition:left .5s cubic-bezier(.22,1,.36,1),top .5s cubic-bezier(.22,1,.36,1),width .5s cubic-bezier(.22,1,.36,1),height .5s cubic-bezier(.22,1,.36,1),transform .18s ease,filter .18s ease,box-shadow .18s ease}
 .cmk-tile::before{content:"";position:absolute;inset:0;z-index:0;border-radius:inherit;pointer-events:none;background:linear-gradient(112deg,rgba(255,255,255,.38) 0%,rgba(255,255,255,.09) 22%,transparent 46%,rgba(255,255,255,.04) 72%,rgba(255,255,255,.14) 100%);opacity:.72;mix-blend-mode:screen}
 .cmk-tile::after{content:"";position:absolute;left:7%;right:16%;top:0;height:46%;border-radius:0 0 50% 50%;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.22),transparent);filter:blur(2px);opacity:.55}
@@ -427,8 +431,8 @@ window.__ModuleLoader__.load({
 
     const CHART_PAD = 5;
     const TILE_GAP = 3;
-    const MAX_TILES = 200;
-    const MAX_LIST_ROWS = 200;
+    const MAX_TILES = 100;
+    const MAX_LIST_ROWS = 100;
 
     function worstAspect(areas, length) {
       if (areas.length === 0 || length <= 0) return Infinity;
@@ -661,6 +665,8 @@ window.__ModuleLoader__.load({
       const chartRef = useRef(null);
       const size = useElementSize(chartRef);
       const limited = limitTreemapItems(items);
+      const hidden = items.length - limited.length;
+      const hint = translate(t, 'tileLimitHint', { count: MAX_TILES });
       const total = items.reduce((sum, item) => sum + item.tokens, 0);
       const rects = layoutTreemap(limited, size.width, size.height);
       return h(
@@ -687,6 +693,19 @@ window.__ModuleLoader__.load({
             ),
           );
         }),
+        hidden > 0
+          ? h(
+              'span',
+              {
+                className: 'cmk-info',
+                role: 'img',
+                tabIndex: 0,
+                'aria-label': hint,
+                title: hint,
+              },
+              h('span', { 'aria-hidden': true }, 'i'),
+            )
+          : null,
       );
     }
 

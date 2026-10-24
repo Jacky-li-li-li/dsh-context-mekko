@@ -130,9 +130,10 @@ with React from the host module table.
   bodies are not part of the context and are not shown.
 - Long sessions are recomputed on demand when the tab is active; the plugin
   does not keep a background projection.
-- Rendering is bounded: a nested treemap draws at most 200 individual tiles
-  and omits the rest from the chart; the detail list shows at most 200 rows,
-  while search still covers every item. Content is still fetched only when a
+- Rendering is bounded: a nested treemap draws at most 100 individual tiles
+  and omits the rest from the chart, with a small info icon when items are
+  hidden; the detail list shows at most 100 rows, while search still covers
+  every item. Content is still fetched only when a
   contribution is opened, so large sessions do not accumulate content strings
   or timers in the client.
 
@@ -140,14 +141,15 @@ with React from the host module table.
 
 The chart and list are intentionally bounded for long sessions:
 
-- `MAX_TILES = 200`: inputs above 200 draw only the 200 largest individual tiles.
-- `MAX_LIST_ROWS = 200`: the list shows the first 200 rows; search covers all.
+- `MAX_TILES = 100`: inputs above 100 draw only the 100 largest individual tiles.
+- `MAX_LIST_ROWS = 100`: the list shows the first 100 rows; search covers all.
 - Content bodies are fetched lazily and are not cached by the browser plugin.
 
 A local Node benchmark of the extracted layout function gave the following:
-200/1k/5k/20k input items all chart at 200 tiles, one layout taking roughly
-0.24–1.03 ms and leaving about 25–42 KB after GC. The live UI keeps one
-ResizeObserver for the active chart, not one per tile.
+100/1k/5k/20k input items all chart at 100 tiles, one layout taking roughly
+0.18–0.55 ms and leaving about 0–29 KB after GC. The live UI keeps one
+ResizeObserver for the active chart, not one per tile, and shows a hover-only
+info icon instead of an aggregate tile when items are hidden.
 - The tab shows the current session only. Sub-session aggregation is future
   work.
 
