@@ -363,7 +363,7 @@ function leafLabel(classification, event, message, toolNames) {
       const toolName = toolNames.get(String(message.toolCallId ?? "")) ?? "tool result";
       if (toolName === "skill") {
         const skillName = skillNameFromMessage(message);
-        if (skillName !== undefined) return `Skill · ${skillName}`;
+        if (skillName !== undefined) return skillName;
       }
       return `Tool result · ${toolName}`;
     }
@@ -485,11 +485,7 @@ export function buildBreakdown(source) {
       contentId: `msg:${String(seq)}`,
       group:
         classification.category === "toolResults"
-          ? (toolNames.get(String(message.toolCallId ?? "")) === "skill"
-              ? (skillNameFromMessage(message) ??
-                toolNames.get(String(message.toolCallId ?? "")) ??
-                "tool")
-              : (toolNames.get(String(message.toolCallId ?? "")) ?? "tool"))
+          ? (toolNames.get(String(message.toolCallId ?? "")) ?? "tool")
           : classification.category === "injected"
             ? (messageSourceKind(message) ?? classification.kind)
             : classification.kind,
