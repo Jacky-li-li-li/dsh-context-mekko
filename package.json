@@ -1,6 +1,6 @@
 {
   "name": "dsh-context-mekko",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Live squarified treemap of the model-visible context window, with a 3D whale bathtub for the Free tile and click-through inspection of every contribution.",
   "type": "module",
   "license": "MIT",

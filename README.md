@@ -15,9 +15,10 @@ and inspect the exact content that was sent to the model.
   its lightweight rendering mode.
 - Liquid glass: translucent frosted blocks, refractive highlights, and smooth
   size transitions make the chart feel like a living glass mosaic.
-- Motion: overview only. Growth sends luminous protons from Free into the
-  categories that changed. Compaction releases upward fog from old tiles into
-  Free. Drill-down views never mount the canvas or start a RAF.
+- Motion: overview only. Growth releases **oxygen bubbles** from the Free tub
+  into the categories that changed; compaction lets bubbles rise back out of the
+  old tiles (with a faint ghost of the tile). Drill-down views never mount the
+  canvas or start a RAF.
 - Live: the tab refreshes on committed session events (debounced) while it is
   open; the header percentage follows the existing `contextPressure`
   projection continuously.

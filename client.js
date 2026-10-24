@@ -1283,6 +1283,37 @@ body:not([data-ds-dark-theme]) .cmk-legendNum{color:#64748b}
           }
           context.fill();
         };
+        const drawBubble = (color, x, y, radius, alpha) => {
+          const halo = glowSprite(color);
+          if (halo !== null) {
+            context.globalAlpha = alpha * 0.16;
+            context.drawImage(halo, x - radius * 2.8, y - radius * 2.8, radius * 5.6, radius * 5.6);
+          }
+          context.globalAlpha = alpha * 0.34;
+          context.fillStyle = 'rgba(176, 238, 233, 1)';
+          context.beginPath();
+          context.arc(x, y, radius, 0, Math.PI * 2);
+          context.fill();
+          context.globalAlpha = alpha * 0.85;
+          context.strokeStyle = 'rgba(58, 132, 128, 0.72)';
+          context.lineWidth = Math.max(1.1, radius * 0.2);
+          context.beginPath();
+          context.arc(x, y, radius, 0, Math.PI * 2);
+          context.stroke();
+          context.globalAlpha = alpha * 0.9;
+          context.strokeStyle = 'rgba(236, 255, 252, 0.95)';
+          context.lineWidth = Math.max(0.8, radius * 0.1);
+          context.beginPath();
+          context.arc(x, y, Math.max(radius - 0.9, 0.6), 0, Math.PI * 2);
+          context.stroke();
+          context.globalAlpha = alpha * 0.95;
+          context.fillStyle = 'rgba(255, 255, 255, 0.95)';
+          context.beginPath();
+          context.arc(x - radius * 0.3, y - radius * 0.32, Math.max(radius * 0.2, 0.8), 0, Math.PI * 2);
+          context.fill();
+          context.globalAlpha = 1;
+        };
+
         const draw = (now) => {
           const elapsed = now - start;
           const width = canvas.width / dpr;
@@ -1290,54 +1321,58 @@ body:not([data-ds-dark-theme]) .cmk-legendNum{color:#64748b}
           context.clearRect(0, 0, width, height);
           if (plan.kind === 'consume') {
             const source = plan.previousFree ?? plan.free;
-            const sourceY = source.y + source.height * 0.72;
+            const surfaceY = source.y + Math.min(36, source.height * 0.2);
             const totalDelta = plan.targets.reduce((sum, target) => sum + target.delta, 0);
-            const particles = Math.min(10, Math.max(3, Math.round(totalDelta / 2048)));
-            const lanes = Math.ceil(particles / plan.targets.length);
-            for (let index = 0; index < particles; index += 1) {
+            const bubbles = Math.min(10, Math.max(4, Math.round(totalDelta / 2048)));
+            const lanes = Math.ceil(bubbles / plan.targets.length);
+            for (let index = 0; index < bubbles; index += 1) {
               const target = plan.targets[index % plan.targets.length];
               const lane = Math.floor(index / plan.targets.length);
-              const delay = index * 42;
-              const progress = Math.max(0, Math.min(1, (elapsed - delay) / 700));
+              const delay = index * 48;
+              const progress = Math.max(0, Math.min(1, (elapsed - delay) / 780));
               if (progress <= 0) continue;
               const eased = 1 - Math.pow(1 - progress, 3);
               const startX = source.x + source.width * ((lane + 1) / (lanes + 1));
-              const endX = target.rect.x + target.rect.width / 2;
+              const endX = target.rect.x + target.rect.width * (0.3 + 0.4 * ((index % 3) / 2));
               const endY = target.rect.y + target.rect.height / 2;
-              const controlX = (startX + endX) / 2;
-              const controlY = Math.min(sourceY, endY) - 42;
+              const controlX = (startX + endX) / 2 + Math.sin(index * 1.7) * 14;
+              const controlY = Math.min(surfaceY, endY) - 34;
               const inverse = 1 - eased;
-              const x = inverse * inverse * startX + 2 * inverse * eased * controlX + eased * eased * endX;
-              const y = inverse * inverse * sourceY + 2 * inverse * eased * controlY + eased * eased * endY;
-              drawGlow(target.color, x, y, 11, 0.62);
-              context.globalAlpha = 0.95;
-              context.fillStyle = target.color;
-              context.beginPath();
-              context.arc(x, y, 2.6, 0, Math.PI * 2);
-              context.fill();
-              if (progress > 0.62) {
-                context.globalAlpha = (1 - progress) * 0.7;
+              const x = inverse * inverse * startX + 2 * inverse * eased * controlX + eased * eased * endX
+                + Math.sin(progress * 9 + index) * 3.5 * (1 - progress);
+              const y = inverse * inverse * surfaceY + 2 * inverse * eased * controlY + eased * eased * endY;
+              const radius = 2.6 + (index % 3) * 1.0 + progress * 1.2;
+              const alpha = progress < 0.82 ? 1 : (1 - progress) / 0.18;
+              drawBubble(target.color, x, y, radius, alpha);
+              if (progress > 0.8) {
+                context.globalAlpha = (1 - progress) / 0.2 * 0.55;
                 context.strokeStyle = target.color;
-                context.lineWidth = 1.6;
+                context.lineWidth = 1.4;
                 context.beginPath();
-                context.arc(endX, endY, 8 + (1 - progress) * 18, 0, Math.PI * 2);
+                context.arc(endX, endY, 6 + (1 - progress) * 20, 0, Math.PI * 2);
                 context.stroke();
+                context.globalAlpha = 1;
               }
             }
           } else {
-            const freeY = plan.free.y + plan.free.height * 0.42;
-            plan.origins.slice(0, 8).forEach((origin, index) => {
-              const delay = index * 35;
-              const progress = Math.max(0, Math.min(1, (elapsed - delay) / 1000));
-              if (progress <= 0) return;
-              const eased = 1 - Math.pow(1 - progress, 3);
-              const startX = origin.rect.x + origin.rect.width / 2;
+            const surfaceTarget = plan.free.y + plan.free.height * 0.55;
+            const origins = plan.kind === 'compaction' ? plan.origins.slice(0, 7) : plan.origins.slice(0, 5);
+            origins.forEach((origin, index) => {
+              const startX = origin.rect.x + origin.rect.width * (0.25 + 0.5 * ((index % 3) / 2));
               const startY = origin.rect.y + origin.rect.height * 0.55;
-              const x = startX + Math.sin(index * 1.7 + progress * 2.4) * 32 * progress;
-              const y = startY + (freeY - startY) * eased;
-              drawGhost(origin.color, origin.rect, 0.26 * (1 - progress));
-              drawGlow(origin.color, x, y, 18 + progress * 48, 0.42 * (1 - progress));
-              drawGlow(origin.color, x + 24 * Math.sin(index), y + 10, 14 + progress * 32, 0.26 * (1 - progress));
+              const delay = index * 40;
+              const progress = Math.max(0, Math.min(1, (elapsed - delay) / 1050));
+              if (progress <= 0) return;
+              const eased = 1 - Math.pow(1 - progress, 2.2);
+              const x = startX + Math.sin(index * 1.9 + progress * 5.5) * 16 * progress;
+              const y = startY + (surfaceTarget - startY) * eased;
+              const radius = 2.8 + progress * 3.0;
+              const alpha = progress < 0.75 ? 1 : (1 - progress) / 0.25;
+              if (plan.kind === 'compaction') drawGhost(origin.color, origin.rect, 0.2 * (1 - progress));
+              drawBubble(origin.color, x, y, radius, alpha * 0.92);
+              if (index % 2 === 0) {
+                drawBubble(origin.color, x + 12 * Math.sin(index * 2.1), y + 13, radius * 0.66, alpha * 0.5);
+              }
             });
           }
           if (elapsed >= plan.duration) {
