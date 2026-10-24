@@ -3,9 +3,9 @@
 ![Context Mekko tab](assets/context-mekko.png)
 
 A DSH plugin that adds a **Context** tag to the conversation header and opens a
-native **right Sidebar tab** with a live **Marimekko** breakdown of the
-model-visible context window. Click any block to inspect the exact content that
-was sent to the model.
+native **right Sidebar tab** with a live **squarified treemap** of the
+model-visible context window. Click a category tile to open its contributions
+and inspect the exact content that was sent to the model.
 
 - Header entry: `Context` pill with the provider-reported occupancy percentage.
 - Native tab: the chart lives in a normal right Sidebar tab, with the panel's
@@ -30,11 +30,12 @@ exact message, tool output, tool schema, runtime section, or skill entry:
 
 The chart follows the current retained model-visible surface, not the raw
 session history. **The whole chart area represents the full context window**:
-each column is a category, blocks inside a column are individual contributions,
-and the neutral **Free** block is the remaining space. Used area and Free follow
-provider-reported pressure when available (with category proportions taken from
-the estimated breakdown); otherwise they fall back to the estimated total.
-Larger blocks show their own labels and token counts.
+every category is one tile, laid out with a squarified treemap so tile area is
+proportional to its token share, and the neutral **Free** tile is the remaining
+space. Used area and Free follow provider-reported pressure when available
+(with category proportions taken from the estimated breakdown); otherwise they
+fall back to the estimated total. Larger tiles show their own labels and token
+counts; smaller tiles keep their tooltip and legend entry.
 
 Categories:
 

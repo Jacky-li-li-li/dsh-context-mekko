@@ -1,7 +1,7 @@
 {
   "name": "dsh-context-mekko",
-  "version": "0.2.0",
-  "description": "Live Marimekko view of the model-visible context window, with click-through inspection of every contribution.",
+  "version": "0.3.0",
+  "description": "Live squarified treemap of the model-visible context window, with click-through inspection of every contribution.",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -14,7 +14,7 @@
     "dsh-plugin",
     "deepseek-harness",
     "context-window",
-    "marimekko"
+    "treemap"
   ],
   "exports": {
     ".": "./index.js",

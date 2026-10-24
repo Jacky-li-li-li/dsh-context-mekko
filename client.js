@@ -4,7 +4,7 @@ window.__ModuleLoader__.load({
     const React = require('react');
 
     const h = React.createElement;
-    const { Fragment, useCallback, useEffect, useMemo, useRef, useState } = React;
+    const { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } = React;
 
     const NS = 'context-mekko';
     const PACKAGE = 'dsh-context-mekko';
@@ -145,27 +145,26 @@ window.__ModuleLoader__.load({
 .cmk-ring{flex:none;display:inline-flex;align-items:center;justify-content:center}
 .cmk-panelBody{flex:1;min-height:0;overflow:auto;padding:12px 14px 22px}
 .cmk-foot{flex:none;padding:9px 16px 11px;border-top:1px solid var(--dsw-alias-border-l3,rgba(128,128,128,.16));color:var(--dsw-alias-label-tertiary,#888);font-size:11px;line-height:16px}
-.cmk-chart{position:relative;isolation:isolate;display:flex;gap:4px;height:184px;width:100%;align-items:stretch;padding:5px;border-radius:18px;overflow:hidden;background:linear-gradient(145deg,color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 36%,transparent),color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 12%,transparent)),rgba(128,128,128,.045);border:1px solid rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(0,0,0,.08),0 12px 30px rgba(0,0,0,.12);backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%)}
+.cmk-chart{position:relative;isolation:isolate;display:block;height:200px;width:100%;padding:5px;border-radius:18px;overflow:hidden;background:linear-gradient(145deg,color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 36%,transparent),color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 12%,transparent)),rgba(128,128,128,.045);border:1px solid rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(0,0,0,.08),0 12px 30px rgba(0,0,0,.12);backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%)}
 .cmk-chart::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.12),transparent 28%,transparent 68%,rgba(255,255,255,.045))}
-.cmk-col{position:relative;z-index:1;display:flex;flex-direction:column;gap:4px;min-width:3px;overflow:visible;border-radius:11px;background:transparent;transition:flex-grow .48s cubic-bezier(.22,1,.36,1)}
-.cmk-cell{--cmk-cell-color:#8a8f98;container-type:size;flex:1 1 0;min-height:2px;padding:0;margin:0;border:1px solid color-mix(in srgb,var(--cmk-cell-color) 30%,rgba(255,255,255,.26));border-radius:10px;cursor:pointer;position:relative;overflow:hidden;isolation:isolate;background:linear-gradient(135deg,color-mix(in srgb,var(--cmk-cell-color) 68%,rgba(255,255,255,.18)) 0%,color-mix(in srgb,var(--cmk-cell-color) 46%,transparent) 52%,color-mix(in srgb,var(--cmk-cell-color) 58%,transparent) 100%);backdrop-filter:blur(14px) saturate(170%);-webkit-backdrop-filter:blur(14px) saturate(170%);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(0,0,0,.10),0 3px 10px rgba(0,0,0,.10);transition:flex-grow .48s cubic-bezier(.22,1,.36,1),transform .18s ease,filter .18s ease,box-shadow .18s ease,opacity .18s ease}
-.cmk-cell::before{content:"";position:absolute;inset:0;z-index:0;border-radius:inherit;pointer-events:none;background:linear-gradient(112deg,rgba(255,255,255,.38) 0%,rgba(255,255,255,.09) 22%,transparent 46%,rgba(255,255,255,.04) 72%,rgba(255,255,255,.14) 100%);opacity:.72;mix-blend-mode:screen}
-.cmk-cell::after{content:"";position:absolute;left:7%;right:16%;top:0;height:46%;border-radius:0 0 50% 50%;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.22),transparent);filter:blur(2px);opacity:.55}
-.cmk-cell:hover{filter:brightness(1.10) saturate(1.12);transform:translateY(-1px);outline:1px solid rgba(255,255,255,.38);outline-offset:-1px;z-index:2;box-shadow:inset 0 1px 0 rgba(255,255,255,.40),inset 0 -1px 0 rgba(0,0,0,.10),0 6px 16px color-mix(in srgb,var(--cmk-cell-color) 24%,rgba(0,0,0,.16))}
-.cmk-cell:active{transform:translateY(0) scale(.995)}
-.cmk-cell:focus-visible{outline:2px solid var(--dsw-focus-ring-color,#4c8bf5);outline-offset:-2px;z-index:3}
-.cmk-cellOther{opacity:.76;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.16) 0 5px,transparent 5px 11px),linear-gradient(135deg,color-mix(in srgb,var(--cmk-cell-color) 58%,rgba(255,255,255,.16)) 0%,color-mix(in srgb,var(--cmk-cell-color) 38%,transparent) 100%)}
-.cmk-cellLabel{position:absolute;inset:7px 8px;z-index:2;display:none;flex-direction:column;align-items:flex-start;gap:2px;pointer-events:none;text-align:left;color:var(--dsw-alias-label-primary,#111);font:inherit}
-.cmk-cellLabelTitle{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;line-height:16px;font-weight:600}
-.cmk-cellLabelMeta{font-size:11px;line-height:15px;opacity:.78;font-variant-numeric:tabular-nums}
-@container (min-width:92px) and (min-height:46px){.cmk-cellLabel{display:flex}}
-.cmk-free{container-type:size;flex:1 1 0;min-width:3px;min-height:0;position:relative;overflow:hidden;border:1px dashed rgba(128,128,128,.38);border-radius:12px;background:repeating-linear-gradient(135deg,rgba(128,128,128,.055) 0 8px,transparent 8px 17px),linear-gradient(145deg,rgba(255,255,255,.045),rgba(128,128,128,.025));box-shadow:inset 0 1px 0 rgba(255,255,255,.10);backdrop-filter:blur(12px) saturate(120%);-webkit-backdrop-filter:blur(12px) saturate(120%);color:var(--dsw-alias-label-tertiary,#888);cursor:default;transition:flex-grow .48s cubic-bezier(.22,1,.36,1)}
+.cmk-tile{--cmk-tile-color:#8a8f98;container-type:size;position:absolute;z-index:1;padding:0;margin:0;border:1px solid color-mix(in srgb,var(--cmk-tile-color) 30%,rgba(255,255,255,.26));border-radius:12px;cursor:pointer;overflow:hidden;isolation:isolate;background:linear-gradient(135deg,color-mix(in srgb,var(--cmk-tile-color) 68%,rgba(255,255,255,.18)) 0%,color-mix(in srgb,var(--cmk-tile-color) 46%,transparent) 52%,color-mix(in srgb,var(--cmk-tile-color) 58%,transparent) 100%);backdrop-filter:blur(14px) saturate(170%);-webkit-backdrop-filter:blur(14px) saturate(170%);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(0,0,0,.10),0 3px 10px rgba(0,0,0,.10);transition:left .5s cubic-bezier(.22,1,.36,1),top .5s cubic-bezier(.22,1,.36,1),width .5s cubic-bezier(.22,1,.36,1),height .5s cubic-bezier(.22,1,.36,1),transform .18s ease,filter .18s ease,box-shadow .18s ease}
+.cmk-tile::before{content:"";position:absolute;inset:0;z-index:0;border-radius:inherit;pointer-events:none;background:linear-gradient(112deg,rgba(255,255,255,.38) 0%,rgba(255,255,255,.09) 22%,transparent 46%,rgba(255,255,255,.04) 72%,rgba(255,255,255,.14) 100%);opacity:.72;mix-blend-mode:screen}
+.cmk-tile::after{content:"";position:absolute;left:7%;right:16%;top:0;height:46%;border-radius:0 0 50% 50%;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.22),transparent);filter:blur(2px);opacity:.55}
+.cmk-tile:hover{filter:brightness(1.10) saturate(1.12);transform:translateY(-1px);outline:1px solid rgba(255,255,255,.38);outline-offset:-1px;z-index:2;box-shadow:inset 0 1px 0 rgba(255,255,255,.40),inset 0 -1px 0 rgba(0,0,0,.10),0 6px 16px color-mix(in srgb,var(--cmk-tile-color) 24%,rgba(0,0,0,.16))}
+.cmk-tile:active{transform:translateY(0) scale(.995)}
+.cmk-tile:focus-visible{outline:2px solid var(--dsw-focus-ring-color,#4c8bf5);outline-offset:-2px;z-index:3}
+.cmk-tileLabel{position:absolute;inset:6px 7px;z-index:2;display:none;flex-direction:column;align-items:flex-start;gap:2px;pointer-events:none;text-align:left;color:var(--dsw-alias-label-primary,#111);font:inherit}
+.cmk-tileLabelTitle{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;line-height:16px;font-weight:600}
+.cmk-tileLabelMeta{display:none;font-size:11px;line-height:15px;opacity:.78;font-variant-numeric:tabular-nums}
+@container (min-width:72px) and (min-height:30px){.cmk-tileLabel{display:flex}}
+@container (min-width:72px) and (min-height:48px){.cmk-tileLabelMeta{display:block}}
+.cmk-free{container-type:size;position:absolute;z-index:1;overflow:hidden;border:1px dashed rgba(128,128,128,.38);border-radius:12px;background:repeating-linear-gradient(135deg,rgba(128,128,128,.055) 0 8px,transparent 8px 17px),linear-gradient(145deg,rgba(255,255,255,.045),rgba(128,128,128,.025));box-shadow:inset 0 1px 0 rgba(255,255,255,.10);backdrop-filter:blur(12px) saturate(120%);-webkit-backdrop-filter:blur(12px) saturate(120%);color:var(--dsw-alias-label-tertiary,#888);cursor:default;transition:left .5s cubic-bezier(.22,1,.36,1),top .5s cubic-bezier(.22,1,.36,1),width .5s cubic-bezier(.22,1,.36,1),height .5s cubic-bezier(.22,1,.36,1)}
 .cmk-freeLabel{position:absolute;inset:12px;display:none;flex-direction:column;align-items:flex-start;gap:3px;pointer-events:none;text-align:left}
 .cmk-freeTitle{font-size:14px;line-height:20px;font-weight:600;color:var(--dsw-alias-label-secondary,#555)}
 .cmk-freeMeta{font-size:12px;line-height:17px;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-tertiary,#888)}
 @container (min-width:100px) and (min-height:64px){.cmk-freeLabel{display:flex}}
-@media (prefers-reduced-motion:reduce){.cmk-col,.cmk-cell,.cmk-free{transition:none}.cmk-cell:hover{transform:none}}
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.cmk-chart{background:var(--dsw-alias-interactive-bg-hover,rgba(128,128,128,.10))}.cmk-cell{background:color-mix(in srgb,var(--cmk-cell-color) 72%,var(--dsw-alias-bg-base,#fff))}}
+@media (prefers-reduced-motion:reduce){.cmk-tile,.cmk-free{transition:none}.cmk-tile:hover{transform:none}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.cmk-chart{background:var(--dsw-alias-interactive-bg-hover,rgba(128,128,128,.10))}.cmk-tile{background:color-mix(in srgb,var(--cmk-tile-color) 72%,var(--dsw-alias-bg-base,#fff))}}
 .cmk-legend{display:flex;flex-direction:column;gap:1px;margin-top:14px}
 .cmk-legendRow{display:flex;align-items:center;gap:8px;width:100%;padding:6px 6px;border:0;border-radius:7px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .cmk-legendRow:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(128,128,128,.08))}
@@ -407,113 +406,188 @@ window.__ModuleLoader__.load({
       );
     }
 
-    function pickLeaves(category) {
-      const sorted = [...category.children].sort((left, right) => right.tokens - left.tokens);
-      const limit = 8;
-      if (sorted.length <= limit) return sorted;
-      const head = sorted.slice(0, limit - 1);
-      const rest = sorted.slice(limit - 1);
-      const tokens = rest.reduce((total, child) => total + child.tokens, 0);
-      return [
-        ...head,
-        {
-          id: `${category.key}:other`,
-          label: 'other',
-          tokens,
-          other: true,
-          count: rest.length,
-        },
-      ];
+    const CHART_PAD = 5;
+    const TILE_GAP = 3;
+
+    function worstAspect(areas, length) {
+      if (areas.length === 0 || length <= 0) return Infinity;
+      let sum = 0;
+      let max = 0;
+      let min = Infinity;
+      for (const area of areas) {
+        sum += area;
+        max = Math.max(max, area);
+        min = Math.min(min, area);
+      }
+      if (sum <= 0 || min <= 0) return Infinity;
+      return Math.max((length * length * max) / (sum * sum), (sum * sum) / (length * length * min));
     }
 
-    function MekkoCell({ leaf, category, color, index, onSelectCategory, onOpenBlock, t }) {
-      const label = leaf.other ? translate(t, `category.${category.key}`) : leaf.label;
-      const meta = leaf.other
-        ? `${formatTokens(leaf.tokens)} · ${translate(t, 'detail.other', { count: leaf.count })}`
-        : formatTokens(leaf.tokens);
+    function layoutTreemap(items, width, height) {
+      const entries = items
+        .filter((item) => item.tokens > 0)
+        .map((item) => ({ item, area: item.tokens }))
+        .sort((left, right) => right.area - left.area);
+      const total = entries.reduce((sum, entry) => sum + entry.area, 0);
+      if (total <= 0 || width <= 0 || height <= 0) return [];
+      const scale = (width * height) / total;
+      const rects = [];
+      let x = 0;
+      let y = 0;
+      let w = width;
+      let h = height;
+      let index = 0;
+
+      while (index < entries.length) {
+        const vertical = w >= h;
+        const length = vertical ? h : w;
+        const row = [];
+        let best = Infinity;
+        let next = index;
+        while (next < entries.length) {
+          const candidate = row.concat(entries[next].area * scale);
+          const ratio = worstAspect(candidate, length);
+          if (row.length === 0 || ratio <= best) {
+            row.push(entries[next].area * scale);
+            best = ratio;
+            next += 1;
+          } else {
+            break;
+          }
+        }
+        const rowArea = row.reduce((sum, area) => sum + area, 0);
+        const thickness = rowArea / Math.max(length, 1);
+        let offset = 0;
+        for (let cursor = index; cursor < next; cursor += 1) {
+          const area = row[cursor - index];
+          if (vertical) {
+            const cellHeight = area / Math.max(thickness, 1e-6);
+            rects.push({
+              item: entries[cursor].item,
+              x,
+              y: y + offset,
+              width: thickness,
+              height: cellHeight,
+            });
+            offset += cellHeight;
+          } else {
+            const cellWidth = area / Math.max(thickness, 1e-6);
+            rects.push({
+              item: entries[cursor].item,
+              x: x + offset,
+              y,
+              width: cellWidth,
+              height: thickness,
+            });
+            offset += cellWidth;
+          }
+        }
+        if (vertical) {
+          x += thickness;
+          w = Math.max(w - thickness, 0);
+        } else {
+          y += thickness;
+          h = Math.max(h - thickness, 0);
+        }
+        index = next;
+      }
+      return rects;
+    }
+
+    function useElementSize(ref) {
+      const [size, setSize] = useState({ width: 0, height: 0 });
+      useLayoutEffect(() => {
+        const element = ref.current;
+        if (!element) return undefined;
+        const measure = () => {
+          const rect = element.getBoundingClientRect();
+          const next = {
+            width: Math.max(rect.width - CHART_PAD * 2, 0),
+            height: Math.max(rect.height - CHART_PAD * 2, 0),
+          };
+          setSize((previous) =>
+            previous.width === next.width && previous.height === next.height ? previous : next,
+          );
+        };
+        measure();
+        if (typeof ResizeObserver === 'undefined') return undefined;
+        const observer = new ResizeObserver(measure);
+        observer.observe(element);
+        return () => observer.disconnect();
+      }, [ref]);
+      return size;
+    }
+
+    function tileStyle(rect) {
+      return {
+        left: `${rect.x + CHART_PAD + TILE_GAP / 2}px`,
+        top: `${rect.y + CHART_PAD + TILE_GAP / 2}px`,
+        width: `${Math.max(rect.width - TILE_GAP, 1)}px`,
+        height: `${Math.max(rect.height - TILE_GAP, 1)}px`,
+      };
+    }
+
+    function MekkoTile({ rect, item, onSelectCategory, t }) {
+      const category = item.category;
+      const color = CATEGORY_COLORS[category.key] ?? '#8a8f98';
+      const label = translate(t, `category.${category.key}`);
       return h(
         'button',
         {
           type: 'button',
-          className: leaf.other ? 'cmk-cell cmk-cellOther' : 'cmk-cell',
-          style: {
-            flexGrow: Math.max(leaf.tokens, 1),
-            flexBasis: 0,
-            '--cmk-cell-color': leaf.other ? color : shade(color, index),
-          },
-          title: leaf.other
-            ? translate(t, 'detail.other', { count: leaf.count })
-            : `${leaf.label} · ${formatTokens(leaf.tokens)} tokens`,
-          'aria-label': leaf.other
-            ? translate(t, 'detail.other', { count: leaf.count })
-            : `${leaf.label}, ${formatTokens(leaf.tokens)} tokens`,
-          onClick: () => {
-            if (leaf.other) onSelectCategory(category.key);
-            else onOpenBlock(leaf, category);
-          },
+          className: 'cmk-tile',
+          style: { ...tileStyle(rect), '--cmk-tile-color': color },
+          title: `${label} · ${formatTokens(category.tokens)} tokens`,
+          'aria-label': `${label}, ${formatTokens(category.tokens)} tokens`,
+          onClick: () => onSelectCategory(category.key),
         },
         h(
           'span',
-          { className: 'cmk-cellLabel' },
-          h('span', { className: 'cmk-cellLabelTitle' }, label),
-          h('span', { className: 'cmk-cellLabelMeta' }, meta),
+          { className: 'cmk-tileLabel' },
+          h('span', { className: 'cmk-tileLabelTitle' }, label),
+          h('span', { className: 'cmk-tileLabelMeta' }, formatTokens(category.tokens)),
         ),
       );
     }
 
-    function FreeSpace({ tokens, windowTokens, t }) {
+    function FreeTile({ rect, tokens, windowTokens, t }) {
       const percent = windowTokens > 0 ? formatPercent(tokens / windowTokens) : '';
-      const title = `${translate(t, 'free')} · ${formatTokens(tokens)}${percent ? ` · ${percent}` : ''}`;
+      const label = translate(t, 'free');
       return h(
         'div',
         {
           className: 'cmk-free',
-          style: { flexGrow: Math.max(tokens, 1), flexBasis: 0, minWidth: 3 },
+          style: tileStyle(rect),
           role: 'img',
-          'aria-label': title,
-          title,
+          'aria-label': `${label} · ${formatTokens(tokens)}${percent ? ` · ${percent}` : ''}`,
+          title: `${label} · ${formatTokens(tokens)}${percent ? ` · ${percent}` : ''}`,
         },
         h(
           'span',
           { className: 'cmk-freeLabel' },
-          h('span', { className: 'cmk-freeTitle' }, translate(t, 'free')),
+          h('span', { className: 'cmk-freeTitle' }, label),
           h('span', { className: 'cmk-freeMeta' }, `${formatTokens(tokens)}${percent ? ` · ${percent}` : ''}`),
         ),
       );
     }
 
-    function Mekko({ categories, layoutScale = 1, freeTokens = 0, windowTokens = 0, onSelectCategory, onOpenBlock, t }) {
-      const total = categories.reduce((sum, category) => sum + category.tokens, 0);
-      if (total <= 0) return h('div', { className: 'cmk-empty' }, '—');
+    function Mekko({ categories, layoutScale = 1, freeTokens = 0, windowTokens = 0, onSelectCategory, t }) {
+      const chartRef = useRef(null);
+      const size = useElementSize(chartRef);
+      const estimatedTotal = categories.reduce((sum, category) => sum + category.tokens, 0);
+      if (estimatedTotal <= 0) return h('div', { className: 'cmk-empty' }, '—');
+      const items = categories
+        .map((category) => ({ key: category.key, tokens: category.tokens * layoutScale, category }))
+        .concat(freeTokens > 0 ? [{ key: 'free', tokens: freeTokens, free: true }] : []);
+      const rects = layoutTreemap(items, size.width, size.height);
       return h(
         'div',
-        { className: 'cmk-chart' },
-        categories.map((category) => {
-          const color = CATEGORY_COLORS[category.key] ?? '#8a8f98';
-          const leaves = pickLeaves(category);
-          return h(
-            'div',
-            {
-              key: category.key,
-              className: 'cmk-col',
-              style: { flexGrow: Math.max(category.tokens * layoutScale, 1), flexBasis: 0, minWidth: 3 },
-              title: `${translate(t, `category.${category.key}`)} · ${formatTokens(category.tokens)}`,
-            },
-            leaves.map((leaf, index) =>
-              h(MekkoCell, {
-                key: leaf.id,
-                leaf,
-                category,
-                color,
-                index,
-                onSelectCategory,
-                onOpenBlock,
-                t,
-              }),
-            ),
-          );
-        }),
-        freeTokens > 0 ? h(FreeSpace, { key: 'free', tokens: freeTokens, windowTokens, t }) : null,
+        { ref: chartRef, className: 'cmk-chart' },
+        rects.map(({ item, ...rect }) =>
+          item.free
+            ? h(FreeTile, { key: item.key, rect, tokens: item.tokens, windowTokens, t })
+            : h(MekkoTile, { key: item.key, rect, item, onSelectCategory, t }),
+        ),
       );
     }
 
@@ -573,7 +647,7 @@ window.__ModuleLoader__.load({
           h('span', null, '·'),
           h('span', null, translate(t, 'estimated')),
         ),
-        h(Mekko, { categories, layoutScale, freeTokens, windowTokens, onSelectCategory, onOpenBlock, t }),
+        h(Mekko, { categories, layoutScale, freeTokens, windowTokens, onSelectCategory, t }),
         h(Legend, { categories, total: data.totalTokens, onSelectCategory, t }),
         (() => {
           const top = categories

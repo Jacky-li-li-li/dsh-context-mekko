@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Context Mekko",
-    "description": "A live Marimekko breakdown of the model-visible context window; click any block to inspect the exact content that was sent."
+    "description": "A live squarified treemap of the model-visible context window; click a category tile to inspect the exact content that was sent."
   },
   "tag": "Context",
   "tagTitle": "Inspect the current context window",
