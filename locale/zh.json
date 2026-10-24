@@ -23,7 +23,7 @@
   "category": {
     "system": "系统与指令",
     "tools": "工具定义",
-    "skills": "技能目录",
+    "skills": "技能",
     "runtime": "运行环境",
     "conversation": "对话历史",
     "toolResults": "工具结果",
@@ -43,7 +43,9 @@
     "goal": "目标",
     "plan": "计划",
     "compaction": "压缩摘要",
-    "tool-jobs": "工具任务"
+    "tool-jobs": "工具任务",
+    "catalog": "目录",
+    "invoked": "已加载"
   },
   "detail": {
     "title": "上下文内容",
@@ -53,6 +55,8 @@
     "noContent": "该部分没有可渲染内容。"
   },
   "topContributors": "占用排行",
+  "usedSkills": "使用过的技能",
+  "usedSkillsHint": "本次会话调用过，但内容不在当前上下文窗口内",
   "listTruncated": "仅显示前 {count} 项；搜索可查找全部",
   "tileLimitHint": "最多展示 {count} 个，其余请在下方搜索查看"
 }

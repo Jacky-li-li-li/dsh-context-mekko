@@ -19,6 +19,29 @@ const BLOCK_OVERHEAD = 4;
 const ROLE_OVERHEAD = 4;
 const MAX_CONTENT_BYTES = 1_500_000;
 
+/** Request-only skill-invocation messages captured at the pre-step boundary. */
+const capturedSkillMessages = new Map();
+
+/**
+ * Append skill-invocation messages that the pre-step hook injected into the
+ * request. They are model-visible but are not persisted as surface events.
+ * @param {{ event: any, message: any }[]} surface
+ * @param {string} sessionId
+ */
+function appendCapturedSkills(surface, sessionId) {
+  const messages = capturedSkillMessages.get(sessionId);
+  if (!Array.isArray(messages) || messages.length === 0) return surface;
+  let offset = 0;
+  for (const message of messages) {
+    surface.push({
+      event: { seq: -1000 - offset, type: "user/message", data: { message } },
+      message,
+    });
+    offset += 1;
+  }
+  return surface;
+}
+
 const CATEGORY_ORDER = [
   "system",
   "tools",
@@ -32,7 +55,7 @@ const CATEGORY_ORDER = [
 const CATEGORY_LABELS = {
   system: "System & instructions",
   tools: "Tool definitions",
-  skills: "Skill catalog",
+  skills: "Skills",
   runtime: "Runtime & environment",
   conversation: "Conversation",
   toolResults: "Tool results",
@@ -259,6 +282,7 @@ async function readSource(ctx, sessionId) {
     const headerEvent = findLast(live.log, (event) => event.type === "request/header");
     const contextEvent = findLast(live.log, (event) => event.type === "request/context");
     const compactionEvent = findLast(live.log, (event) => event.type === "compaction/summary");
+    appendCapturedSkills(surface, sessionId);
     return {
       surface,
       header: headerEvent?.data?.header,
@@ -298,6 +322,7 @@ async function readSource(ctx, sessionId) {
       compaction = compactionFromEvent(record?.target);
     }
   }
+  appendCapturedSkills(surface, sessionId);
   return { surface, header, contextWindow, compaction };
 }
 
@@ -308,6 +333,9 @@ async function readSource(ctx, sessionId) {
  */
 function classify(event, message) {
   const kind = messageSourceKind(message);
+  if (event.type !== "tool/result" && /<skill_content\b/u.test(messageText(message))) {
+    return { category: "skills", kind: "skill" };
+  }
   if (event.type === "system/message") {
     return { category: "system", kind: "system" };
   }
@@ -328,6 +356,8 @@ function classify(event, message) {
         return { category: "runtime", kind: "sections" };
       case "skill-catalog":
         return { category: "skills", kind: "catalog" };
+      case "skill-invocation":
+        return { category: "skills", kind: "skill" };
       case "agent-instructions":
         return { category: "system", kind: "instructions" };
       case "user":
@@ -371,6 +401,34 @@ function findToolNameByCallId(surface, callId) {
 }
 
 /**
+ * Skills named by a direct `/name` gesture in persisted user messages. The
+ * gesture remains in conversation history even though its injected body is
+ * request-only, so this is an honest "used" trace, not a context bucket.
+ * @param {{ message: any }[]} surface
+ */
+function usedSkillNames(surface) {
+  const catalog = new Set();
+  for (const { message } of surface) {
+    const source = isObject(message?.source) ? message.source : undefined;
+    if (source?.kind !== "skill-catalog" || !Array.isArray(source.entries)) continue;
+    for (const entry of source.entries) {
+      if (typeof entry?.name === "string") catalog.add(entry.name);
+    }
+  }
+  const used = [];
+  for (const { message } of surface) {
+    if (message?.role !== "user") continue;
+    const source = isObject(message.source) ? message.source : undefined;
+    if (source?.kind !== "user") continue;
+    for (const match of messageText(message).matchAll(/(^|\s)\/([a-zA-Z0-9][\w.-]*)/gu)) {
+      const name = match[2];
+      if (catalog.has(name) && !used.includes(name)) used.push(name);
+    }
+  }
+  return used;
+}
+
+/**
  * Human-readable label for one leaf, before localization.
  * @param {ReturnType<typeof classify>} classification
  * @param {Record<string, unknown>} event
@@ -403,6 +461,8 @@ function leafLabel(classification, event, message, toolNames) {
       return "Runtime context";
     case "catalog":
       return "Skill catalog";
+    case "skill":
+      return skillNameFromMessage(message) ?? "Skill";
     default: {
       const kind = messageSourceKind(message);
       return kind === undefined ? "Injected context" : `Injected · ${kind}`;
@@ -427,7 +487,7 @@ export function buildBreakdown(source) {
     if (message === null || message === undefined) continue;
     const tokens = estimateMessage(message);
     messageTokens += tokens;
-    if (typeof event.seq === "number") asOfSeq = event.seq;
+    if (typeof event.seq === "number" && event.seq > 0) asOfSeq = event.seq;
     if (tokens === 0) continue;
     const classification = classify(event, message);
     const category = categories.get(classification.category);
@@ -499,7 +559,7 @@ export function buildBreakdown(source) {
             kind: "json",
             preview: excerpt(String(entry?.description ?? ""), 96),
             contentId: `skill:${String(seq)}:${names[index]}`,
-            group: "skill",
+            group: "catalog",
             seq,
           });
         });
@@ -518,9 +578,11 @@ export function buildBreakdown(source) {
       group:
         classification.category === "toolResults"
           ? (toolNames.get(String(message.toolCallId ?? "")) ?? "tool")
-          : classification.category === "injected"
-            ? (messageSourceKind(message) ?? classification.kind)
-            : classification.kind,
+          : classification.category === "skills"
+            ? (classification.kind === "skill" ? "invoked" : "catalog")
+            : classification.category === "injected"
+              ? (messageSourceKind(message) ?? classification.kind)
+              : classification.kind,
       seq,
     });
     category.tokens += tokens;
@@ -568,6 +630,7 @@ export function buildBreakdown(source) {
     messageTokens,
     toolTokens,
     compaction: source.compaction,
+    usedSkills: usedSkillNames(surface),
     categories: populated.map((category) => ({
       ...category,
       share: totalTokens === 0 ? 0 : category.tokens / totalTokens,
@@ -641,15 +704,17 @@ export function buildContent(source, blockId) {
       message.role === "tool"
         ? findToolNameByCallId(surface, String(message.toolCallId ?? ""))
         : undefined;
-    const skillName = toolName === "skill" ? skillNameFromMessage(message) : undefined;
+    const skillName = skillNameFromMessage(message) ?? (toolName === "skill" ? skillNameFromMessage(message) : undefined);
     let title;
     if (message.role === "tool") {
       title = skillName ?? (toolName === undefined ? "Tool result" : `Tool result · ${toolName}`);
     } else if (message.role === "assistant") title = "Assistant message";
     else if (message.role === "system") title = "System prompt";
+    else if (skillName !== undefined) title = skillName;
     else if (sourceKind === "runtime-context") title = "Runtime context";
     else if (sourceKind === "time-context") title = "Time context";
     else if (sourceKind === "skill-catalog") title = "Skill catalog";
+    else if (sourceKind === "skill-invocation") title = skillNameFromMessage(message) ?? "Skill";
     else if (sourceKind === "agent-instructions") title = "Workspace instructions";
     else if (sourceKind === "tool-jobs") title = "Tool job notice";
     else title = "Message";
@@ -774,6 +839,16 @@ export const inject = ["connection"];
 
 /** @param {any} ctx */
 export function apply(ctx) {
+  ctx.on("agent/pre-step", async ({ agent }, next) => {
+    const decision = await next();
+    if (!decision || decision.kind === "reject") return decision;
+    const sessionId = String(agent?.session?.id ?? agent?.id ?? "");
+    if (sessionId === "") return decision;
+    const messages = decision.messages.filter((message) => message?.source?.kind === "skill-invocation");
+    if (messages.length === 0) capturedSkillMessages.delete(sessionId);
+    else capturedSkillMessages.set(sessionId, messages);
+    return decision;
+  });
   ctx.effect(
     () =>
       ctx.connection.fetch.register({

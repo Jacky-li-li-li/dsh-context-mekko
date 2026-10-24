@@ -23,7 +23,7 @@
   "category": {
     "system": "System & instructions",
     "tools": "Tool definitions",
-    "skills": "Skill catalog",
+    "skills": "Skills",
     "runtime": "Runtime & environment",
     "conversation": "Conversation",
     "toolResults": "Tool results",
@@ -43,7 +43,9 @@
     "goal": "Goal",
     "plan": "Plan",
     "compaction": "Compaction summary",
-    "tool-jobs": "Tool jobs"
+    "tool-jobs": "Tool jobs",
+    "catalog": "Catalog",
+    "invoked": "Loaded"
   },
   "detail": {
     "title": "Context contribution",
@@ -53,6 +55,8 @@
     "noContent": "This contribution has no rendered content."
   },
   "topContributors": "Largest contributions",
+  "usedSkills": "Used skills",
+  "usedSkillsHint": "Invoked in this session; the body is not in the current context window",
   "listTruncated": "Showing the first {count}; search covers all",
   "tileLimitHint": "Showing at most {count}; search below for the rest"
 }
