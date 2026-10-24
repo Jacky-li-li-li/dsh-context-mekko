@@ -24,7 +24,6 @@ and inspect the exact content that was sent to the model.
 - Performance: the 100-tile nested chart uses a lightweight tile mode. It
   disables per-tile backdrop blur, pseudo highlights, and geometry transitions
   so a dense drill-down does not composite 100 glass layers at once.
-- Used skills: the panel shows a compact history of direct `/skill` gestures from the session. Their bodies are request-only and are not counted in the current context chart. Skill catalog remains the session's skill directory; model-loaded skill results still appear under Tool results → skill.
 - Hierarchical drill-down: category tile → semantic groups (Conversation:
   User/Assistant; tool results: tool name; system: prompt/instructions) →
   contribution treemap and searchable list → the rendered content, with token

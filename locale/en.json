@@ -53,8 +53,6 @@
     "noContent": "This contribution has no rendered content."
   },
   "topContributors": "Largest contributions",
-  "usedSkills": "Used skills",
-  "usedSkillsHint": "Invoked in this session; the body is not in the current context window",
   "listTruncated": "Showing the first {count}; search covers all",
   "tileLimitHint": "Showing at most {count}; search below for the rest"
 }

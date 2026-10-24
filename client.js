@@ -32,8 +32,6 @@ window.__ModuleLoader__.load({
       other: '其他',
       free: 'Free',
       topContributors: '占用排行',
-      usedSkills: '使用过的技能',
-      usedSkillsHint: '本次会话调用过，但内容不在当前上下文窗口内',
       items: '{count} 项',
       listTruncated: '仅显示前 {count} 项；搜索可查找全部',
       tileLimitHint: '最多展示 {count} 个，其余请在下方搜索查看',
@@ -93,8 +91,6 @@ window.__ModuleLoader__.load({
       other: 'Other',
       free: 'Free',
       topContributors: 'Largest contributions',
-      usedSkills: 'Used skills',
-      usedSkillsHint: 'Invoked in this session; the body is not in the current context window',
       items: '{count} items',
       listTruncated: 'Showing the first {count}; search covers all',
       tileLimitHint: 'Showing at most {count}; search below for the rest',
@@ -228,9 +224,6 @@ body:not([data-ds-dark-theme]) .cmk-legendNum{color:#64748b}
 .cmk-legendName{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-secondary,#555)}
 .cmk-legendNum{flex:none;color:var(--dsw-alias-label-tertiary,#888);font-variant-numeric:tabular-nums;font-size:12px}
 .cmk-totals{display:flex;align-items:baseline;gap:6px;margin-top:12px;color:var(--dsw-alias-label-tertiary,#888);font-size:12px}
-.cmk-usedSkills{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:8px;color:var(--dsw-alias-label-tertiary,#888);font-size:11px;line-height:16px}
-.cmk-usedSkillsLabel{font-weight:600;color:var(--dsw-alias-label-secondary,#555)}
-.cmk-usedSkillChip{padding:2px 7px;border:1px solid color-mix(in srgb,var(--dsw-alias-label-tertiary,#888) 28%,transparent);border-radius:999px;background:color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 38%,transparent);color:var(--dsw-alias-label-secondary,#555);font-family:var(--ds-font-family-code,monospace);font-size:10px;line-height:14px}
 .cmk-sectionTitle{margin:16px 0 4px;color:var(--dsw-alias-label-secondary,#555);font-size:12px;font-weight:600;line-height:18px}
 .cmk-listNote{margin-top:8px;color:var(--dsw-alias-label-tertiary,#888);font-size:11px;line-height:16px;text-align:center}
 .cmk-totals b{color:var(--dsw-alias-label-secondary,#555);font-weight:600;font-variant-numeric:tabular-nums}
@@ -860,22 +853,6 @@ body:not([data-ds-dark-theme]) .cmk-legendNum{color:#64748b}
       return match?.[1];
     }
 
-    function usedSkillsFromData(categories) {
-      const catalog = new Set();
-      const skills = categories.find((category) => category.key === 'skills');
-      for (const child of skills?.children ?? []) catalog.add(String(child.label ?? ''));
-      const used = [];
-      for (const category of categories) {
-        for (const child of category.children ?? []) {
-          for (const match of String(child.preview ?? '').matchAll(/(^|\s)\/([a-zA-Z0-9][\w.-]*)/gu)) {
-            const name = match[2];
-            if (catalog.has(name) && !used.includes(name)) used.push(name);
-          }
-        }
-      }
-      return used;
-    }
-
     function normalizeChild(category, child) {
       if (category.key !== 'toolResults') return child;
       const preview = String(child.preview ?? '');
@@ -1160,9 +1137,6 @@ body:not([data-ds-dark-theme]) .cmk-legendNum{color:#64748b}
       const used = Math.min(Math.max(reportedUsed, 0), windowTokens);
       const layoutScale = used / data.totalTokens;
       const freeTokens = Math.max(windowTokens - used, 0);
-      const usedSkills = Array.isArray(data.usedSkills) && data.usedSkills.length > 0
-        ? data.usedSkills
-        : usedSkillsFromData(categories);
       const displayCategories = categories.map((category) => ({
         ...category,
         tokens: category.tokens * layoutScale,
@@ -1178,12 +1152,6 @@ body:not([data-ds-dark-theme]) .cmk-legendNum{color:#64748b}
           h('span', null, '·'),
           h('span', null, formatPercent(windowTokens > 0 ? used / windowTokens : 0)),
         ),
-        usedSkills.length > 0
-          ? h('div', { className: 'cmk-usedSkills', title: translate(t, 'usedSkillsHint') },
-              h('span', { className: 'cmk-usedSkillsLabel' }, translate(t, 'usedSkills')),
-              usedSkills.map((name) => h('span', { key: name, className: 'cmk-usedSkillChip' }, name)),
-            )
-          : null,
         h(Mekko, {
           sessionId,
           asOfSeq: data.asOfSeq,
