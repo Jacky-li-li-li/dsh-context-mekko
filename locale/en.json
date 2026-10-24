@@ -23,7 +23,7 @@
   "category": {
     "system": "System & instructions",
     "tools": "Tool definitions",
-    "skills": "Skills",
+    "skills": "Skill catalog",
     "runtime": "Runtime & environment",
     "conversation": "Conversation",
     "toolResults": "Tool results",
@@ -43,9 +43,7 @@
     "goal": "Goal",
     "plan": "Plan",
     "compaction": "Compaction summary",
-    "tool-jobs": "Tool jobs",
-    "catalog": "Catalog",
-    "invoked": "Loaded"
+    "tool-jobs": "Tool jobs"
   },
   "detail": {
     "title": "Context contribution",

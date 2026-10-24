@@ -55,7 +55,7 @@ const CATEGORY_ORDER = [
 const CATEGORY_LABELS = {
   system: "System & instructions",
   tools: "Tool definitions",
-  skills: "Skills",
+  skills: "Skill catalog",
   runtime: "Runtime & environment",
   conversation: "Conversation",
   toolResults: "Tool results",
@@ -334,7 +334,7 @@ async function readSource(ctx, sessionId) {
 function classify(event, message) {
   const kind = messageSourceKind(message);
   if (event.type !== "tool/result" && /<skill_content\b/u.test(messageText(message))) {
-    return { category: "skills", kind: "skill" };
+    return { category: "injected", kind: "skill" };
   }
   if (event.type === "system/message") {
     return { category: "system", kind: "system" };
@@ -357,7 +357,7 @@ function classify(event, message) {
       case "skill-catalog":
         return { category: "skills", kind: "catalog" };
       case "skill-invocation":
-        return { category: "skills", kind: "skill" };
+        return { category: "injected", kind: "skill" };
       case "agent-instructions":
         return { category: "system", kind: "instructions" };
       case "user":
@@ -559,7 +559,7 @@ export function buildBreakdown(source) {
             kind: "json",
             preview: excerpt(String(entry?.description ?? ""), 96),
             contentId: `skill:${String(seq)}:${names[index]}`,
-            group: "catalog",
+            group: "skill",
             seq,
           });
         });
@@ -578,9 +578,7 @@ export function buildBreakdown(source) {
       group:
         classification.category === "toolResults"
           ? (toolNames.get(String(message.toolCallId ?? "")) ?? "tool")
-          : classification.category === "skills"
-            ? (classification.kind === "skill" ? "invoked" : "catalog")
-            : classification.category === "injected"
+          : classification.category === "injected"
               ? (messageSourceKind(message) ?? classification.kind)
               : classification.kind,
       seq,

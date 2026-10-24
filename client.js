@@ -41,7 +41,7 @@ window.__ModuleLoader__.load({
       category: {
         system: '系统与指令',
         tools: '工具定义',
-        skills: '技能',
+        skills: '技能目录',
         runtime: '运行环境',
         conversation: '对话历史',
         toolResults: '工具结果',
@@ -62,8 +62,6 @@ window.__ModuleLoader__.load({
         plan: '计划',
         compaction: '压缩摘要',
         'tool-jobs': '工具任务',
-        catalog: '目录',
-        invoked: '已加载',
       },
       detail: {
         source: '来源',
@@ -104,7 +102,7 @@ window.__ModuleLoader__.load({
       category: {
         system: 'System & instructions',
         tools: 'Tool definitions',
-        skills: 'Skills',
+        skills: 'Skill catalog',
         runtime: 'Runtime & environment',
         conversation: 'Conversation',
         toolResults: 'Tool results',
@@ -125,8 +123,6 @@ window.__ModuleLoader__.load({
         plan: 'Plan',
         compaction: 'Compaction summary',
         'tool-jobs': 'Tool jobs',
-        catalog: 'Catalog',
-        invoked: 'Loaded',
       },
       detail: {
         source: 'Source',
@@ -938,8 +934,6 @@ body:not([data-ds-dark-theme]) .cmk-legendNum{color:#64748b}
         'plan',
         'compaction',
         'tool-jobs',
-        'catalog',
-        'invoked',
       ]);
       return known.has(key) ? translate(t, `groups.${key}`) : key;
     }

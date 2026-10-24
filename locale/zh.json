@@ -23,7 +23,7 @@
   "category": {
     "system": "系统与指令",
     "tools": "工具定义",
-    "skills": "技能",
+    "skills": "技能目录",
     "runtime": "运行环境",
     "conversation": "对话历史",
     "toolResults": "工具结果",
@@ -43,9 +43,7 @@
     "goal": "目标",
     "plan": "计划",
     "compaction": "压缩摘要",
-    "tool-jobs": "工具任务",
-    "catalog": "目录",
-    "invoked": "已加载"
+    "tool-jobs": "工具任务"
   },
   "detail": {
     "title": "上下文内容",
