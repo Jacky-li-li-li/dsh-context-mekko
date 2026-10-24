@@ -24,7 +24,7 @@ window.__ModuleLoader__.load({
       copy: '复制',
       copied: '已复制',
       empty: '当前还没有模型可见的上下文。',
-      approx: '整图面积为上下文窗口；分类为估算构成，Free 优先按 Provider 占用计算。',
+      approx: '整图面积为上下文窗口；分类块百分比为占已用构成，Free 按窗口计算。',
       used: '已用',
       of: '/',
       tokens: 'tokens',
@@ -73,7 +73,7 @@ window.__ModuleLoader__.load({
       copy: 'Copy',
       copied: 'Copied',
       empty: 'No model-visible context yet.',
-      approx: 'Chart area is the context window; categories are estimated, and Free follows provider pressure when available.',
+      approx: 'Chart area is the context window; tile percentages use the used composition, while Free uses the window.',
       used: 'used',
       of: 'of',
       tokens: 'tokens',
@@ -527,25 +527,26 @@ window.__ModuleLoader__.load({
       };
     }
 
-    function MekkoTile({ rect, item, onSelectCategory, t }) {
+    function MekkoTile({ rect, item, onSelectCategory, share, t }) {
       const category = item.category;
       const color = CATEGORY_COLORS[category.key] ?? '#8a8f98';
       const label = translate(t, `category.${category.key}`);
+      const meta = `${formatTokens(category.tokens)} · ${formatPercent(share)}`;
       return h(
         'button',
         {
           type: 'button',
           className: 'cmk-tile',
           style: { ...tileStyle(rect), '--cmk-tile-color': color },
-          title: `${label} · ${formatTokens(category.tokens)} tokens`,
-          'aria-label': `${label}, ${formatTokens(category.tokens)} tokens`,
+          title: `${label} · ${meta} of used context`,
+          'aria-label': `${label}, ${meta} of used context`,
           onClick: () => onSelectCategory(category.key),
         },
         h(
           'span',
           { className: 'cmk-tileLabel' },
           h('span', { className: 'cmk-tileLabelTitle' }, label),
-          h('span', { className: 'cmk-tileLabelMeta' }, formatTokens(category.tokens)),
+          h('span', { className: 'cmk-tileLabelMeta' }, meta),
         ),
       );
     }
@@ -586,7 +587,14 @@ window.__ModuleLoader__.load({
         rects.map(({ item, ...rect }) =>
           item.free
             ? h(FreeTile, { key: item.key, rect, tokens: item.tokens, windowTokens, t })
-            : h(MekkoTile, { key: item.key, rect, item, onSelectCategory, t }),
+            : h(MekkoTile, {
+                key: item.key,
+                rect,
+                item,
+                share: estimatedTotal > 0 ? item.category.tokens / estimatedTotal : 0,
+                onSelectCategory,
+                t,
+              }),
         ),
       );
     }

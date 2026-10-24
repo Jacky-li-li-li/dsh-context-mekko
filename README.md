@@ -34,8 +34,8 @@ every category is one tile, laid out with a squarified treemap so tile area is
 proportional to its token share, and the neutral **Free** tile is the remaining
 space. Used area and Free follow provider-reported pressure when available
 (with category proportions taken from the estimated breakdown); otherwise they
-fall back to the estimated total. Larger tiles show their own labels and token
-counts; smaller tiles keep their tooltip and legend entry.
+fall back to the estimated total. Larger tiles show their own label, token
+count, and percentage; smaller tiles keep their tooltip and legend entry.
 
 Categories:
 
