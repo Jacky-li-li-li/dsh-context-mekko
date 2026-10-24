@@ -53,6 +53,10 @@ Categories:
 | Tool results | `tool/result` nodes, grouped by tool name |
 | Injected & other | Team/agent messages, goal/plan/reminder injections, job notices, compaction products, future source kinds |
 
+`skill` tool results are labelled with the loaded skill name (for example
+`Skill · frontend-design`) instead of the generic tool name, and that name is
+also used as their Tool results subgroup.
+
 Token counts reuse the same fixed heuristic as
 `@deepseek-ai/dsh-token-meter` (four characters per token plus structural
 overhead), so the composition agrees with the harness's existing

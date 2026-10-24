@@ -186,6 +186,17 @@ function messageSourceKind(message) {
   return typeof source?.kind === "string" ? source.kind : undefined;
 }
 
+/**
+ * Extract the loaded skill's name from a `skill` tool result. The result body
+ * starts with a `<skill_content name="…">` envelope, so the tool name alone
+ * would hide which skill was actually loaded.
+ * @param {Record<string, unknown>} message
+ */
+function skillNameFromMessage(message) {
+  const match = /<skill_content\b[^>]*\bname=["']([^"']+)["']/u.exec(messageText(message));
+  return match?.[1];
+}
+
 /** @param {Record<string, unknown>} message */
 function messageText(message) {
   const content = Array.isArray(message.content) ? message.content : [];
@@ -350,6 +361,10 @@ function leafLabel(classification, event, message, toolNames) {
         : "Assistant message";
     case "tool-result": {
       const toolName = toolNames.get(String(message.toolCallId ?? "")) ?? "tool result";
+      if (toolName === "skill") {
+        const skillName = skillNameFromMessage(message);
+        if (skillName !== undefined) return `Skill · ${skillName}`;
+      }
       return `Tool result · ${toolName}`;
     }
     case "sections":
@@ -470,7 +485,11 @@ export function buildBreakdown(source) {
       contentId: `msg:${String(seq)}`,
       group:
         classification.category === "toolResults"
-          ? (toolNames.get(String(message.toolCallId ?? "")) ?? "tool")
+          ? (toolNames.get(String(message.toolCallId ?? "")) === "skill"
+              ? (skillNameFromMessage(message) ??
+                toolNames.get(String(message.toolCallId ?? "")) ??
+                "tool")
+              : (toolNames.get(String(message.toolCallId ?? "")) ?? "tool"))
           : classification.category === "injected"
             ? (messageSourceKind(message) ?? classification.kind)
             : classification.kind,
