@@ -1722,6 +1722,13 @@ body:not([data-ds-dark-theme]) .cmk-legendNum{color:#64748b}
             kind: TAB_KIND,
             priority: 'extension',
             title: () => t('tag'),
+            guide: [
+              {
+                id: TAB_ID,
+                title: () => t('tag'),
+                description: () => t('subtitle'),
+              },
+            ],
           }),
         'context-mekko: tab type',
       );
