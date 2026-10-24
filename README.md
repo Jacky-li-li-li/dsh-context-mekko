@@ -10,6 +10,8 @@ was sent to the model.
 - Header entry: `Context` pill with the provider-reported occupancy percentage.
 - Native tab: the chart lives in a normal right Sidebar tab, with the panel's
   own close, split, fullscreen, drag/dock, and layout persistence behavior.
+- Liquid glass: translucent frosted blocks, refractive highlights, and smooth
+  size transitions make the chart feel like a living glass mosaic.
 - Live: the tab refreshes on committed session events (debounced) while it is
   open; the header percentage follows the existing `contextPressure`
   projection continuously.
